@@ -10,16 +10,163 @@
 
     <script src="sketch.js" type="text/javascript"></script>
 
-    <style> body {padding: 0; margin: 0;} canvas {vertical-align: top;} </style>
+    <style> 
+      body {padding: 0; margin: 0; font-family: sans-serif;}
+      canvas {vertical-align: top; } 
+      
+      #post-container {
+        position: absolute;
+        left:0;
+        top:0;
+        background-color: #fff;
+        box-sizing:border-box;
+        width: 33vw;
+        height: 100vh;
+        padding: 2vw;
+        overflow-y:auto;
+        display: initial;
+      }
+      .p-button{
+        background-color: #0099cc;
+        border: none;
+        color: white;
+        width: 25vw;
+        padding: 15px 32px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 16px;
+        margin: 4px 2px;
+      }
+      .h-button{
+        background-color: #0099cc;
+        border: none;
+        color: white;
+        padding: 15px 32px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 16px;
+        margin: 4px 2px;
+      }
+      #tags p{
+        display: inline-block;
+        background-color: #eee;
+        padding: 1vw;
+        margin: 1vw 1vw 1vw 0vw;
+        font-weight: bold;
+      }
+      
+      #pt{
+        font-family: sans-serif;
+        font-size: 18px;
+        padding: 15px 32px;
+        border: solid 5px #c9c9c9;
+      }
+      
+      
+      #ht {
+        font-family: sans-serif;
+        font-size: 18px;
+        appearance: none;
+        box-shadow: none;
+        border-radius: none;
+        padding: 15px 32px;
+        border: solid 5px #c9c9c9;
+        width: 5vw;
+        transition: border 0.3s;
+      }
+      
+      #pt:focus{
+        outline:none;
+      }
+      
+      input:focus { 
+        outline:none;
+        border: solid 5px #969696;
+      }
+      
+      #post-contents{
+        position: absolute;
+        left:0;
+        top:0;
+        background-color: #fff;
+        box-sizing:border-box;
+        width: 33vw;
+        height: 100vh;
+        padding: 2vw;
+        overflow-y:auto;
+        display: none;
+      }
+      
+      .make-comment{
+        display: none;
+      }
+      
+      #ct {
+        font-family: sans-serif;
+        font-size: 18px;
+        padding: 15px 32px;
+        border: solid 5px #c9c9c9;
+        outline:none;
+      }
+      
+      .c-button{
+        background-color: #0099cc;
+        border: none;
+        color: white;
+        width: 26vw;
+        padding: 15px 32px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 16px;
+        margin: 1vh 0 1vh 0;
+      }
+      
+      #comment-section{
+        background-color: #eee;
+        box-sizing:border-box;
+        padding: 1vw;
+        margin-top: 1vh;
+        
+        
+      }
+      
+      
+      }
+    </style>
   </head>
   <body>
-    <p>What are you thinking about today?</p>
-    <input id = "pt"></input>
-    <p>hashtag your post</p>
-    <input id = "ht"></input>
-    <button onclick = "addHashTag()">add</button>
-    <br>
-    <div id='tags'></div>
-    <button onclick = "postText()">POST</button>
+    <div id = "post-container">
+      <p>What are you thinking about today?</p>
+      <p contenteditable="true" id = "pt"></p>
+      <hr>
+      <p>hashtag your post</p>
+      <input id = "ht"></input>
+      <button class = "h-button" onclick = "addHashTag()">add</button>
+      <br>
+      <div id='tags'></div>
+      <hr>
+      <button class = "p-button" onclick = "postText()">POST</button>
+    </div>
+    
+    <div id = "post-contents">
+        <img src = "profile-pic.jpg">
+        <p id = "post-text"></p>
+        <br>
+        <p id = "op"></p>
+        <div id = 'tags'>
+          
+        </div>
+        <p>write new comment here</p>
+        <p contenteditable="true" id = 'ct'></p>
+        <button class = "c-button" onclick = "addComment()">Post Comment</button>
+        <p>Comments</p>
+        <div id = "comment-section">
+          <p>comments are here</p>
+        </div>  
+    </div>
+    
   </body>
 </html>

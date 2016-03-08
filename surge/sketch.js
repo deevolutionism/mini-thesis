@@ -6,8 +6,10 @@ var func = 0;
 var postTextInput, hashTagList = [];
 var postButtonPressed = false;
 var reactionType = null;
-
-var canvas = document.getElementById("DefaultCanvas0"); // need to determine mouse position in canvas
+var emotions = ["💚","😊", "😮", "😢","😬", "😡"];
+var id = 0;
+var canvas;
+var showPostContents;
 
 function preload() {
   images[0] = loadImage("images/love.png");
@@ -21,12 +23,16 @@ function preload() {
 
 
 function setup() {
-  createCanvas(windowWidth, windowHeight);
+  canvas = createCanvas(windowWidth/1.5, windowHeight);
+  
   // for (var i = 0; i < 1; i++){
   //   bubbles[i] = new Bubble(width/2, height/2); //make 100 bubbles
   // }
   numTags = 0;
+}
 
+function windowResized() {
+  resizeCanvas(windowWidth, windowHeight);
 }
 
 //increase relative size
@@ -35,12 +41,12 @@ function postText() {
   //grab the text and the hashtags entered into the inputs
   //place them in temporary variable to later be injected into
   //a bubble post object
-  postTextInput = document.getElementById('pt').value;
+  postTextInput = document.getElementById('pt').innerHTML;
   pt = postTextInput;
-  console.log(postText);
-  document.getElementById('pt').value = '';
+  console.log(pt);
+  document.getElementById('pt').innerHTML = '';
   document.getElementById('ht').value = '';
-  postButtonPressed = true;
+  postButtonPressed = true; //allow user to post a comment somewhere
 }
 
 function addHashTag() {
@@ -48,7 +54,6 @@ function addHashTag() {
   hashTagInput = document.getElementById('ht').value;
   hashTagList.push(hashTagInput);
   //creat a new element which includes the hashtag just entered
-
 
   var element = document.getElementById('tags');
   var p = document.createElement('p') //create p element
@@ -63,13 +68,59 @@ function addHashTag() {
   numTags++;
 }
 
+
+function revealPostContents(id){
+  //show post content as well as comments and related tags
+  document.getElementById("post-container").style.display = "none";
+  document.getElementById("post-contents").style.display = "initial";
+  document.getElementById('post-text').innerHTML = bubbles[id].postText;
+  document.getElementById('op').innerHTML = id;
+  console.log('revealPostContents from post# ' + id);
+  for (var i = 0; i<bubbles[id].userComments.length; i++){
+    
+    //clear all previous content
+    var myNode = document.getElementById("comment-section");
+    if(myNode){
+     //var child = document.getElementById("comment");
+     //myNode.removeChild(child);  
+    }
+    
+    //populate with with the current post
+    var myNode = document.getElementById('comment-section');
+    var p = document.createElement('p')
+    var comment = document.createTextNode(bubbles[id].userComments[i] + " says: " + bubbles[id].comments[i]);
+    p.appendChild(comment);
+    p.setAttribute('id', 'comment');
+    myNode.appendChild(p);
+  }
+}
+
+
+function createComment(){
+  //create textarea with button to add the new comment
+  document.getElementById("ct").style.display = "initial";
+  
+}
+
+function addComment(){
+  console.log('add comment');
+}
+
+function hidePostContents(){
+  console.log('hiding post contents!');
+  document.getElementById('post-contents').style.display = "none";
+  document.getElementById('post-container').style.display = "initial";
+}
+
 function draw() {
   clear();
+  canvas.position(windowWidth/3,0);
   background(230);
 
   for (var i = 0; i < bubbles.length; i++) { //loop through all instantiations
     bubbles[i].update();
     bubbles[i].display();
+    bubbles[i].intersects();
     bubbles[i].addReaction();
     if (bubbles[i].dead()) {
       bubbles.splice(i, 1);
@@ -85,7 +136,9 @@ function draw() {
   
   if(postButtonPressed == true){
     noFill();
+    stroke(1);
     ellipse(mouseX, mouseY, 100, 100);
+    noStroke();
     textAlign(CENTER);
     textSize(24);
     fill(150);
@@ -95,66 +148,79 @@ function draw() {
 }
 
 function mousePressed() {
-  if (mouseY >= 0 && postButtonPressed == true) {
-    var b = new Bubble(mouseX, mouseY, millis(), postText);
+  if (postButtonPressed == true) {
+    var b = new Bubble(mouseX, mouseY, millis(), pt, hashTagList, id);
     bubbles.push(b);
-    postButtonPressed = false;
+    postButtonPressed = false; //hide the target bubble
     pt = '';
+    // console.log(id);
+    id++;
   }
   check();//is mouse intersecting with post bubble when pressed?
-  //if so, then show menu around the post
+  //if so, then show menu around the post and populate window with the post's contents
 }
 
 function check() {
   for (var i = 0; i < bubbles.length; i++) {
-    console.log(bubbles[i].mouseIntersectsWithPost);
+    
+        
     if (bubbles[i].mouseIntersectsWithPost()) { //is the mouse intersecting with the post?
-      bubbles[i].showMenu = true;
-      console.log('show menu');
+      bubbles[i].showMenu = true; //show the menu around the post
+      //revealPostContents(bubbles[i].ID); //populate the window with this post's contents
+      // console.log('show menu!!!');
+      
     } else if (bubbles[i].mouseIntersectsWithPost() == false) {
-      bubbles[i].showMenu = false;
-      console.log('hide menu');
+      bubbles[i].showMenu = false; //hide the menu
+      console.log(showPostContents);
+      // console.log('post # ' + bubbles[i].ID + ' hide menu');
+      //if the mouse was pressed outside the boundaries of any of the current posts, then hide the post contents
     }
     
-    console.log(bubbles[i].mouseIntersectsWithReactions());
+    
     if(bubbles[i].mouseIntersectsWithReactions() == bubbles[i].reactionType[i]){
       bubbles[i].updateType[i] = true;
     } else {
       
     }
-    //bubbles[i].updateReactions(bubbles[i].mouseIntersectsWithReactions());
-    //bubbles[i].updateReactions(String(bubbles[i].mouseIntersectsWithReactions()));
-    // if(bubbles[i].mouseIntersectsWithReactions() == bubbles[i].reactionType[i]){
-    //   bubbles[i].updateReactions(bubbles[i].reactionType[i]);
-    // }
-    //is the mouse intersecting with one of the buttons? determine which one.
-    //if(bubbles[i].mouseIntersectsWithReactions()){ 
-      //if its intersecting with a bubble when the button was pressed, change boolean.
-      //console.log(bubbles[i].reactionType[i]);
-      //bubbles[i].addReaction(bubbles[i].reactionType[i]);
-    //}
+    
+    //evaluate all other bubbles to see if any of them are currently pressed. if none are pressed, then hide the postcontents window
+    if(bubbles[i].showMenu == true){
+      showPostContents = true; //one of the posts has been clicked on, dont hide contents
+    } else if (bubbles[i].showMenu == false && showPostContents == false){
+      hidePostContents();
+    } else {
+      showPostContents = false; //none of the posts are selected, hide all contents
+    }
+    
+    
+    
   }
 }
 
 
 
-function Bubble(x, y, time, t) { //capitalize to distinguish as a class
+function Bubble(x, y, time, t, hash, ID) { //capitalize to distinguish as a class
   //class constructor
   this.xpos = x;
   this.ypos = y;
+  this.ID = ID;
+  this.hashTags = hash;
   this.lifetime = 100;
   this.postText = t;
+  this.userComments = ['user1', 'user2', 'user3'];
+  this.comments = ['this is a test comment blah blah this is just a test', 'this is another test comment by test user2. hello!', 'this is the third and final test comment. hooray!'];
   this.startTime = time;
   this.nextSecond = this.startTime + 1000;
   this.showMeny = false;
   this.desiredSeparation;
   this.scalar = 6;
-  this.col = 255;
+  this.col = 150;
   this.s = 100;
   this.r = 255;
   this.g = 255;
   this.b = 255;
   this.maxReactionSize;
+  this.d;
   
   //array = [index0: heart, index1: happy, index2: surprised, index3: sad, index4: disgusted, index5: angry]
   this.reactionPosx =[0,0,0,0,0,0];
@@ -177,88 +243,105 @@ function Bubble(x, y, time, t) { //capitalize to distinguish as a class
   this.disgustedPosx, this.disgustedPosy, this.disgustedSize, this.disgustedC = 150, this.numDisgustedReactions = 0, this.drs = 0;
   this.angryPosx, this.angryPosy, this.angrySize, this.angryC = 150, this.numAngryReactions = 0, this.ars = 0;
 
-  this.percentTotalHeartReactions = 0;
-  this.percentTotalHappyReactions = 0;
-  this.percentTotalSurprisedReactions = 0;
-  this.percentTotalSadReactions = 0;
-  this.percentTotalDisgustedReactions = 0;
-  this.percentTotalAngryReactions = 0;
+  
 
 
   //class method
   this.display = function() {
-    fill(this.r, this.g, this.b);
-    stroke(5);
-    ellipse(this.xpos, this.ypos, this.lifetime, this.lifetime);
-    textFont("monaco");
-    textSize(this.lifetime / 2);
-    text(this.lifetime, this.xpos - 10, this.ypos + 10)
+    // fill(255);
+    // stroke(this.col);
+    // strokeWeight(5);
+    // ellipse(this.xpos, this.ypos, this.lifetime, this.lifetime);
+    // textFont("monaco");
+    // textSize(this.lifetime / 2);
+    // //text(this.lifetime, this.xpos - 10, this.ypos + 10)
 
-    strokeWeight(2);
-    stroke(2);
-
+    // strokeWeight(2);
+    // stroke(2);
+    
+    
     if (this.showMenu == true) {
+      
+      fill(255);
+      stroke(this.col);
+      strokeWeight(5);
+      ellipse(this.xpos, this.ypos, 100, 100);
+      textFont("monaco");
+      textSize(50);
+      //text(this.lifetime, this.xpos - 10, this.ypos + 10)
+  
+      strokeWeight(2);
+      stroke(2);
       
       fill(255);
       for (var i = 0; i < this.reactionType.length; i++){
         this.reactionScale[i] = map(this.reactionSize[i],0,100 / this.scalar,0,100);
         stroke(this.reactionColor[i]);
         ellipse(this.reactionPosx[i], this.reactionPosy[i], this.reactionSize[i], this.reactionSize[i]);
-        image(images[i], 0,0,100,100, this.reactionPosx[i] - (this.reactionScale[i] / 16), this.reactionPosy[i] - (this.reactionScale[i] / 16), this.reactionScale[i] / 8, this.reactionScale[i] / 8);
+        //textSize(int(this.rectionScale[i]));
+        textSize(int(this.reactionSize[i]));
+        rectMode(RADIUS);
+        textAlign(CENTER);
+        text(emotions[i], this.reactionPosx[i], this.reactionPosy[i] + this.reactionSize[i]/2.5);
+        //image(images[i], 0,0,100,100, this.reactionPosx[i] - (this.reactionScale[i] / 16), this.reactionPosy[i] - (this.reactionScale[i] / 16), this.reactionScale[i] / 8, this.reactionScale[i] / 8);
       }
       
-      //scaling and positioning images
-      // this.hs = map(this.heartSize, 0, 100 / this.scalar, 0, 100);
-      // this.hps = map(this.happySize, 0, 100 / this.scalar, 0, 100);
-      // this.ss = map(this.sadSize, 0, 100 / this.scalar, 0, 100);
-      // this.as = map(this.angrySize, 0, 100 / this.scalar, 0, 100);
-      // this.sps = map(this.surprisedSize, 0, 100 / this.scalar, 0, 100);
-      // this.ds = map(this.disgustedSize, 0, 100 / this.scalar, 0, 100);
-      //console.log(this.hs);
+      fill(255);
+      textSize(this.lifetime/10);
+      rectMode(RADIUS);
+      rect(this.xpos, this.ypos, 60, 30);
+      fill(150);
+      noStroke();
+      rectMode(CENTER);
+      text(this.postText, this.xpos, this.ypos, 120,50);
+      
+    } else { //if the post is not selected:
+      
+      fill(255);
+      var d = dist(this.xpos, this.ypos, mouseX, mouseY);
+      if( d < this.lifetime/2){
+        stroke(0)
+      } else {
+        stroke(this.col);
+      }
+      strokeWeight(5);
+      ellipse(this.xpos, this.ypos, this.lifetime, this.lifetime);
+      textFont("monaco");
+      textSize(this.lifetime / 2);
+      //text(this.lifetime, this.xpos - 10, this.ypos + 10)
 
-
-      // fill(255);
-      // stroke(this.heartC)
-      // ellipse(this.heartPosx, this.heartPosy, this.heartSize, this.heartSize);
-      // image(heart, 0, 0, 100, 100, this.heartPosx - (this.hs / 16), this.heartPosy - (this.hs / 16), this.hs / 8, this.hs / 8);
-
-      // stroke(this.happyC);
-      // ellipse(this.happyPosx, this.happyPosy, this.happySize, this.happySize);
-      // image(happy, 0, 0, 100, 100, this.happyPosx - (this.hps / 16), this.happyPosy - (this.hps / 16), this.hps / 8, this.hps / 8);
-
-      // stroke(this.surprisedC);
-      // ellipse(this.surprisedPosx, this.surprisedPosy, this.surprisedSize, this.surprisedSize);
-      // image(surprised, 0, 0, 100, 100, this.surprisedPosx - (this.sps / 16), this.surprisedPosy - (this.sps / 16), this.sps / 8, this.sps / 8);
-
-      // stroke(this.sadC);
-      // ellipse(this.sadPosx, this.sadPosy, this.sadSize, this.sadSize);
-      // image(sad, 0, 0, 100, 100, this.sadPosx - (this.ss / 16), this.sadPosy - (this.ss / 16), this.ss / 8, this.ss / 8);
-
-      // stroke(this.disgustedC);
-      // ellipse(this.disgustedPosx, this.disgustedPosy, this.disgustedSize, this.disgustedSize);
-      // image(disgusted, 0, 0, 100, 100, this.disgustedPosx - (this.ds / 16), this.disgustedPosy - (this.ds / 16), this.ds / 8, this.ds / 8);
-
-      // stroke(this.angryC);
-      // ellipse(this.angryPosx, this.angryPosy, this.angrySize, this.angrySize);
-      // image(angry, 0, 0, 100, 100, this.angryPosx - (this.as / 16), this.angryPosy - (this.as / 16), this.as / 8, this.as / 8);
+      strokeWeight(2);
+      stroke(2);
+      
+      
+      textSize(this.lifetime/10)
+      fill(150);
+      noStroke();
+      rectMode(CENTER);
+      text(this.postText, this.xpos, this.ypos, 80,50);
     }
-
+    
+    
   };
 
   this.update = function() {
     //every second that passes, subtract one lifetime
     if (millis() >= this.nextSecond) {
       this.lifetime--
-        this.s = this.lifetime;
+      this.s = this.lifetime;
       this.desiredSeparation = this.lifetime * 2;
       this.nextSecond = millis() + 1000;
     }
 
 
     if (this.showMenu == true) {
+      this.s = 100;
+      // for(var i = 0; i < this.reactionType.length; i++){
+      //   this.reactionSize[i] = (this.s / this.scalar) + this.reactionRS[i];
+      // }
       
       for(var i = 0; i < this.reactionType.length; i++){
-        this.reactionSize[i] = (this.s / this.scalar) + this.reactionRS[i];
+        this.reactionSize[i] = (15) + this.reactionRS[i];
       }
       
       //heart
@@ -286,12 +369,18 @@ function Bubble(x, y, time, t) { //capitalize to distinguish as a class
   this.mouseIntersectsWithPost = function() {
     //if mouse was clicked and the mouse x and y coordinates
     //intersect with this post, then return true.
-    var d = dist(this.xpos, this.ypos, mouseX, mouseY)
-    if (d < this.lifetime / 2) {
-      console.log('mouse intersecting');
+    this.d = dist(this.xpos, this.ypos, mouseX, mouseY);//does mouse overlap with this post?
+    console.log('mouse distance: ' + this.d + ' from post# ' + this.ID);
+    //console.log("mouse intersect id: " + this.ID);
+    if (this.d < this.lifetime / 2) {
+      console.log('mouse intersecting with post# ' + this.ID );
+      revealPostContents(this.ID);
+      //call function to show comments and full post contents
+      //console.log("from this post: " + this.ID);
       return true;
-    } else if (d > this.lifetime+20){
-      console.log('nope');
+    } else if (this.d > this.s+20 && mouseX > 0){
+      //console.log('nope');
+      //console.log('mouse position: ' + mouseX);
       return false;
     }
   }
@@ -314,17 +403,18 @@ function Bubble(x, y, time, t) { //capitalize to distinguish as a class
     }
   }
 
-  this.intersects = function(other) {
-    var d = dist(this.posx, this.posy, other.posx, other.posy);
-    if (d < this.desiredSeparation + other.desiredSeparation) { //do they intersect?
-      this.col = random(255);
-      //console.log("intersecting");
+  this.intersects = function() {
+    var d = dist(this.posx, this.posy, mouseX, mouseY);
+    if (d < this.lifetime / 2) { //do they intersect?
+      this.col = 0;
+      // console.log('hello');
+    } else {
+      this.col = 150;
     }
   }
 
   this.separate = function(other) { //make bubbles move away from each other to create space and prevent overlap.
     this.desiredSeparation = this.s * 2;
-
   }
 
   this.addReaction = function() {
@@ -343,98 +433,22 @@ function Bubble(x, y, time, t) { //capitalize to distinguish as a class
 
   this.updateReactions = function(reaction) {
     var r = reaction;
-    this.maxReactionSize = this.lifetime / 2;
-    console.log('hello from update reactions')
+    this.maxReactionSize = 100 / 2;
+    //console.log('hello from update reactions')
     for (var i = 0; i < this.reactionType.length; i++){
       if(r == this.reactionType[i]){
-
         this.totalReactionCount++;
         this.numReactions[i]++;
-        console.log(this.reactionType[i] + ' has been updated to ' + this.numReactions[i]);
+        //console.log(this.reactionType[i] + ' has been updated to ' + this.numReactions[i]);
       }
     }
-
-
-
-    //console.log(r)
-    // if (r === 'heart') {
-    //   this.totalReactionCount++; //add 1 to total count
-    //   this.numHeartReactions++; //add one to heart
-    //   this.g++;
-    //   this.r--;
-    //   this.clickedHeart = false;
-    //     //50% of post size = max hrs size
-    //     //hrs = heartReactionSize
-    //     //map(value: hrs,min-val: 0, max-val: pecentageheartreactions, min-outpus: 0, max-output: postSize/2)
-    //     //percentage of total reactions = numHeartReactions/totalReactionCount * 100
-
-    //     //console.log(this.totalReactionCount);
-
-    // }
-    // if (r === 'happy') {
-    //   //console.log('happy working')
-    //   this.totalReactionCount++;
-    //   this.numHappyReactions++;
-    //   this.g++;
-    //   this.r++;
-    //   this.b++;
-    // }
-    // if (r === 'surprised') {
-    //   this.totalReactionCount++;
-    //   this.numSurprisedReactions++;
-    //   //this.b++
-    //   this.r++
-    //   this.g++
-    //   this.b--
-    // }
-    // if (r === 'sad') {
-    //   this.totalReactionCount++;
-    //   this.numSadReactions++;
-    //   this.r--;
-    //   this.g--
-    //   this.b++
-    //   //this.b--;
-    // }
-    // if (r === 'disgusted') {
-    //   this.totalReactionCount++;
-    //   this.numDisgustedReactions++;
-    //   this.r++;
-    //   this.g++;
-    //   this.b--;
-    // }
-    // if (r === 'angry') {
-    //   this.totalReactionCount++;
-    //   this.numAngryReactions++;
-    //   this.r++;
-    //   this.g--;
-    //   this.b--;
-    // } else if (r === 'null') {
-
-    // }
-    
     
     for (var i = 0; i < this.reactionType.length; i++){
       this.percentTotalReactions[i] = (this.numReactions[i] / this.totalReactionCount) * 100;
       this.reactionRS[i] = map(this.percentTotalReactions[i], 0, 100, 0, this.maxReactionSize);
     }
-    
-    // this.percentTotalHeartReactions = (this.numHeartReactions / this.totalReactionCount) * 100;
-    // this.percentTotalHappyReactions = (this.numHappyReactions / this.totalReactionCount) * 100;
-    // this.percentTotalSurprisedReactions = (this.numSurprisedReactions / this.totalReactionCount) * 100;
-    // this.percentTotalSadReactions = (this.numSadReactions / this.totalReactionCount) * 100;
-    // this.percentTotalDisgustedReactions = (this.numDisgustedReactions / this.totalReactionCount) * 100;
-    // this.percentTotalAngryReactions = (this.numAngryReactions / this.totalReactionCount) * 100;
-    // this.hrs = map(this.percentTotalHeartReactions, 0, 100, 0, this.maxReactionSize);
-    // this.hprs = map(this.percentTotalHappyReactions, 0, 100, 0, this.maxReactionSize);
-    // this.surrs = map(this.percentTotalSurprisedReactions, 0, 100, 0, this.maxReactionSize);
-    // this.sadrs = map(this.percentTotalSadReactions, 0, 100, 0, this.maxReactionSize);
-    // this.drs = map(this.percentTotalDisgustedReactions, 0, 100, 0, this.maxReactionSize);
-    // this.ars = map(this.percentTotalAngryReactions, 0, 100, 0, this.maxReactionSize);
-    // console.log('angry r: ' + this.numAngryReactions + 'total reactions: ' + this.totalReactionCount);
 
   }
-
-
 
 
 }
