@@ -29,8 +29,6 @@ var currentPostID = null;
 
 function setup() {
   canvas = createCanvas(windowWidth/1.5,windowHeight);
-  createP("Drag the mouse to generate new boids.");
-  
   universe = new Universe();
 
 }
@@ -80,8 +78,6 @@ function check() {
       
     } else if (universe.posts[i].mouseIntersectsWithPost() == false) {
       universe.posts[i].showMenu = false; //hide the menu
-      console.log(showPostContents);
-      // console.log('post # ' + bubbles[i].ID + ' hide menu');
       //if the mouse was pressed outside the boundaries of any of the current posts, then hide the post contents
     }
     
@@ -93,13 +89,13 @@ function check() {
     }
     
     //evaluate all other bubbles to see if any of them are currently pressed. if none are pressed, then hide the postcontents window
-    if(universe.posts[i].showMenu == true){
-      showPostContents = true; //one of the posts has been clicked on, dont hide contents
-    } else if (universe.posts[i].showMenu == false && showPostContents == false){
-      hidePostContents();
-    } else {
-      showPostContents = false; //none of the posts are selected, hide all contents
-    }
+    // if(universe.posts[i].showMenu == true){
+    //   showPostContents = true; //one of the posts has been clicked on, dont hide contents
+    // } else if (universe.posts[i].showMenu == false && showPostContents == false){
+    //   hidePostContents();
+    // } else {
+    //   showPostContents = false; //none of the posts are selected, hide all contents
+    // }
 
   }
 }
@@ -183,5 +179,8 @@ function hidePostContents(){
   console.log('hiding post contents!');
   document.getElementById('post-contents').style.display = "none";
   document.getElementById('post-container').style.display = "initial";
+  for (i = 0; i<universe.posts.length; i++){
+    universe.posts[i].showMenu = false; 
+  }
 }
 

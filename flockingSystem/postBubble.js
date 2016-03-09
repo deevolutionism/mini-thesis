@@ -105,7 +105,7 @@ function Post(x,y,size,time,t,hash,ID) {
     if (millis() >= this.nextSecond) {
       this.lifetime--
       this.s = this.lifetime;
-      //this.desiredSeparation = this.lifetime * 2;
+      this.desiredSeparation = this.lifetime * 2;
       this.nextSecond = millis() + 1000;
     }
     
@@ -296,14 +296,14 @@ function Post(x,y,size,time,t,hash,ID) {
 // Separation
 // Method checks for nearby boids and steers away
   this.separate = function(posts) {
-    var desiredseparation = this.s + 50;
+    this.desiredSeparation = this.s + 100;
     var steer = createVector(0,0);
     var count = 0;
     // For every boid in the system, check if it's too close
     for (var i = 0; i < posts.length; i++) {
       var d = p5.Vector.dist(this.position,posts[i].position);
       // If the distance is greater than 0 and less than an arbitrary amount (0 when you are yourself)
-      if ((d > 0) && (d < desiredseparation)) {
+      if ((d > 0) && (d < this.desiredSeparation)) {
         this.maxspeed = 0.5; //give it speed to move it away
         // Calculate vector pointing away from neighbor
         var diff = p5.Vector.sub(this.position,posts[i].position);
