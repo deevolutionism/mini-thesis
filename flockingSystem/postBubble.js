@@ -50,6 +50,8 @@ function Post(x,y,size,time,t,hash,ID) {
   this.updateType = [false,false,false,false,false,false]
   
   
+  // >>>
+  //this chunk may not be needed. Attempt to remove.
   this.totalReactionCount = 0; //for calculating percentages
   this.heartPosx, this.heartPosy, this.heartSize, this.heartC = 150, this.numHeartReactions = 0, this.hrs = 0;
   this.happyPosx, this.happyPosy, this.happySize, this.happyC = 150, this.numHappyReactions = 0, this.hprs = 0;
@@ -57,7 +59,7 @@ function Post(x,y,size,time,t,hash,ID) {
   this.sadPosx, this.sadPosy, this.sadSize, this.sadC = 150, this.numSadReactions = 0, this.sadrs = 0;
   this.disgustedPosx, this.disgustedPosy, this.disgustedSize, this.disgustedC = 150, this.numDisgustedReactions = 0, this.drs = 0;
   this.angryPosx, this.angryPosy, this.angrySize, this.angryC = 150, this.numAngryReactions = 0, this.ars = 0;
-  
+  // <<<
 
 
 
@@ -165,6 +167,7 @@ function Post(x,y,size,time,t,hash,ID) {
       var d = dist(this.reactionPosx[i], this.reactionPosy[i], mouseX, mouseY)
       if(d < this.reactionSize[i] / 2){
         this.updateReactions(this.reactionType[i]);
+        console.log(this.reactionType[i]);
         return this.reactionType[i]; // tell the mouse which one it clicked on
       }
     }
