@@ -1,0 +1,17 @@
+{
+  "name": "surgeapi",
+  "version": "1.0.0",
+  "description": "social media application",
+  "main": "PostObject.js",
+  "dependencies": {
+    "request": "^2.69.0",
+    "twit": "^2.2.3"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "author": "Gentry Demchak",
+  "license": "ISC"
+}

@@ -2,8 +2,8 @@
 body {padding: 0; margin: 0;}
 canvas {vertical-align: top; z-index: 0;}
 
-h1, h3{
-  font-size: 42pt;
+h1 {
+  font-size: 32pt;
   font-family: helvetica;
   color: #eee;
 }
@@ -23,7 +23,6 @@ h1, h3{
   left: 33vw;
   background-color: #fff;
   z-index: 1;
-  
 }
 
 #login-container {
@@ -35,6 +34,14 @@ h1, h3{
 }
 
 #login-username {
+  margin: 0 auto;
+  padding: 15px 32px;
+  margin: 4px 2px;
+  display: inline-block;
+  width: 29vw;
+}
+
+#login-password {
   margin: 0 auto;
   padding: 15px 32px;
   margin: 4px 2px;

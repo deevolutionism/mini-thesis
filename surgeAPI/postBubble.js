@@ -105,11 +105,7 @@ function Post(x,y,size,time,t,hash,ID,postType,article) {
     // Limit speed
     this.velocity.limit(this.maxspeed);
     this.position.add(this.velocity);
-    console.log(this.position.x);
-    px = this.position.x - panx;
-    py = this.position.y - pany;
-    this.position.x = px;
-    this.position.y = py;
+    
 
     // Reset accelertion to 0 each cycle
     this.acceleration.mult(0);

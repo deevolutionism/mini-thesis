@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>SURGE</title>
+	<link rel="shortcut icon" type="image/png" href="/favicon.png"/>
+    <script src="libraries/p5.js" type="text/javascript"></script>
+
+    <script src="libraries/p5.dom.js" type="text/javascript"></script>
+    <script src="libraries/p5.sound.js" type="text/javascript"></script>
+    <!-- <script src="libraries/p5.play.js" type="text/javascript"></script> -->
+    <script src="sketch.js" type="text/javascript"></script>
+    <script src="postBubble.js" type = "text/javascript"></script>
+    <script src="PostObject.js" type = "text/javascript"></script>
+    <script src='login.js' type = 'text/javascript'></script>
+    <!-- <script src= "server.js" type = "text/javascript"></script> -->
+    <!-- <script src="dom.js" type = "text/javascript"></script> -->
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
+  	<link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/themes/smoothness/jquery-ui.css">
+  	<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/jquery-ui.min.js"></script>
+    <script type="text/javascript">
+   
+    </script>
+  </head>
+  <style type="text/css">
+    body {padding: 0; margin: 0;} canvas {vertical-align: top;}
+    #header-container{
+      box-sizing: border-box;
+      margin: 0px 3vw 0 3vw;
+      padding: 2vw;
+    }
+    #action-container{
+      position: absolute;
+      top: 80%;
+      -webkit-box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.75);
+      border-radius: 50%;
+      left: 75%;
+      padding: 50px;
+      background-color: #00aaee;
+      user-select: none; 
+    }
+    h1{
+        display: inline;
+        font-family: helvetica;
+        font-size:128px;
+    }
+    #defaultCanvas0 {
+        z-index: -1;
+    }
+    #title{
+      color: #00aaee;
+      margin: 0 12vw 0 12vw;
+    }
+    #centeredmenu {
+       float:left;
+       width:100%;
+       background:#fff;
+       border-bottom:4px solid #000;
+       overflow:hidden;
+       position:relative;
+    }
+    #centeredmenu ul {
+       clear:left;
+       float:left;
+       list-style:none;
+       margin:0;
+       padding:0;
+       position:relative;
+       left:50%;
+       text-align:center;
+    }
+    #centeredmenu ul li {
+       display:block;
+       float:left;
+       list-style:none;
+       margin:0;
+       padding:0;
+       position:relative;
+       right:50%;
+    }
+    #centeredmenu ul li a {
+       display:block;
+       margin:0 0 0 1px;
+       padding:3px 10px;
+       background:#ddd;
+       color:#000;
+       text-decoration:none;
+       line-height:1.3em;
+    }
+    #centeredmenu ul li a:hover {
+       background:#00aaee;
+       color:#fff;
+    }
+    #centeredmenu ul li a.active,
+    #centeredmenu ul li a.active:hover {
+       color:#fff;
+       background:#000;
+       font-weight:bold;
+    }
+
+    .title{box-sizing:border-box; height: 64px;}
+
+    /*.icon-right{float:right;}
+    .icon-left{float:left;}*/
+    #container{background-color:#fff;border-bottom: 2px solid black; height:150px;text-align:center;vertical-align: text-bottom;}
+    #right-button{display: inline; position: absolute; top: 0; left:85%;}
+    #left-button{display:inline; position: absolute; top:0; left: 0;}
+    #post-container{height: 0vh; width: 100%; position: absolute;visibility: hidden;overflow:hidden;position: relative;}
+    #pro-pic{float: left; margin: 30px;}
+    #input-area{font-size:50px; vertical-align: text-bottom;}
+    #post-button{position: absolute;
+      bottom: 0px;
+      right: 0px;
+      font-size: 72px;
+      background-color: #00aaee;
+      width: 100%;
+      height:10vh;
+    }
+  </style>
+  <body>
+    <!-- <div id="centeredmenu">
+      <ul>
+        <li><a href="#"><img src="images/profile.png"></a></li>
+        <li><div class = 'title'><h1>SURGE</h1></div></li>
+        <li><a href="#"><img src="images/search-icon.png"></a></li>
+      </ul>
+    </div> -->
+
+    <div id = 'container'>
+      <h1 id="title">SURGE</h1>
+      <div id="left-button"><a href="#"><img class="icon-left" src="images/profile.png" alt="profile"></a></div>
+      <div id="right-button"><a href="#"><img class="icon-right" src="images/search-icon.png" alt="search"></a></div>
+    </div>
+    <div id = "action-container" class = 'post-button'>
+      <a href = '#'><img src="images/Pencil-icon.png"></a>
+    </div>
+    <div id = "post-container">
+      <img src="images/profile.png" id = "pro-pic" alt="anonymous">
+      <p contenteditable="true" id="input-area">what are you thinking about?</p>
+      <button class = "button" id="post-button" onclick="postText()">post</button>
+    </div>
+  </body>
+</html>
