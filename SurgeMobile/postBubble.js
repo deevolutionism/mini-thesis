@@ -11,11 +11,11 @@ function Post(x,y,size,time,t,hash,ID,postType,article) {
   this.velocity = createVector(random(-0.2,0.2),random(-0.2,0.2));
   this.position = createVector(x,y);
   this.r = 3.0;
-  this.maxspeed = 0.5;    // Maximum speed
+  this.maxspeed = 5;    // Maximum speed
   this.maxforce = 0.05; // Maximum steering force
   //this.s = size;
   
-  
+  console.log(postType);
   // this.xpos = x;
   // this.ypos = y;
   this.postType = postType; //is this a user post or an article?
@@ -37,9 +37,12 @@ function Post(x,y,size,time,t,hash,ID,postType,article) {
   this.b = 255;
   this.maxReactionSize;
   this.d;
-
+  this.focused = false;
+  this.author = 'anonymous';
+  this.views = 0;
   //article data
   this.a = article;
+
 
   
   //array = [index0: heart, index1: happy, index2: surprised, index3: sad, index4: disgusted, index5: angry]
@@ -151,7 +154,7 @@ function Post(x,y,size,time,t,hash,ID,postType,article) {
   this.mouseIntersectsWithPost = function() {
     //if mouse was clicked and the mouse x and y coordinates
     //intersect with this post, then return true.
-    this.d = dist(this.position.x, this.position.y, mouseX, mouseY);//does mouse overlap with this post?
+    this.d = dist(this.position.x - xoffset, this.position.y - yoffset, mouseX, mouseY);//does mouse overlap with this post?
     // console.log('mouse distance: ' + this.d + ' from post# ' + this.ID);
     //console.log("mouse intersect id: " + this.ID);
     if (this.d < this.lifetime / 2) {
@@ -180,7 +183,7 @@ function Post(x,y,size,time,t,hash,ID,postType,article) {
   
   //change color of post to indicate the mouse is hovering over and an action can be made on it.
   this.intersects = function() {
-    var d = dist(this.position.x, this.position.y, mouseX, mouseY);
+    var d = dist(this.position.x - xoffset, this.position.y - yoffset, mouseX, mouseY);
     if (d < this.lifetime / 2) { //do they intersect?
       this.col = 0;
     } else {
@@ -234,7 +237,7 @@ function Post(x,y,size,time,t,hash,ID,postType,article) {
       fill(255);
       stroke(this.col);
       strokeWeight(5);
-      ellipse(this.position.x, this.position.y, 100, 100);
+      ellipse(this.position.x - xoffset, this.position.y - yoffset, 100, 100);
       textFont("monaco");
       textSize(50);
       //text(this.lifetime, this.xpos - 10, this.ypos + 10)
@@ -258,24 +261,24 @@ function Post(x,y,size,time,t,hash,ID,postType,article) {
       fill(255);
       textSize(12);
       rectMode(RADIUS);
-      rect(this.position.x, this.position.y, 60, 30);
+      rect(this.position.x - xoffset, this.position.y - yoffset, 200, 100);
       fill(150);
       noStroke();
       rectMode(CENTER);
       textAlign(CENTER);
-      text(this.postText, this.position.x, this.position.y, 120,50);
+      text(this.postText, this.position.x - xoffset, this.position.y - yoffset, 120,50);
       
     } else { //if the post is not selected:
       
       fill(255);
-      var d = dist(this.position.x, this.position.y, mouseX, mouseY);
+      var d = dist(this.position.x - xoffset, this.position.y - yoffset, mouseX, mouseY);
       if( d < this.lifetime/2){
         stroke(0)
       } else {
         stroke(this.col);
       }
       strokeWeight(5);
-      ellipse(this.position.x, this.position.y, this.lifetime, this.lifetime);
+      ellipse(this.position.x - xoffset, this.position.y - yoffset, this.lifetime, this.lifetime);
       textFont("monaco");
       textSize(this.lifetime / 2);
       //text(this.lifetime, this.xpos - 10, this.ypos + 10)
@@ -288,7 +291,7 @@ function Post(x,y,size,time,t,hash,ID,postType,article) {
       fill(150);
       noStroke();
       rectMode(CENTER);
-      text(this.postText, this.position.x, this.position.y, 80,50);
+      text(this.postText, this.position.x - xoffset, this.position.y - yoffset, 300,300);
     }
   
     //ellipse(this.position.x, this.position.y, this.s, this.s);
@@ -296,10 +299,10 @@ function Post(x,y,size,time,t,hash,ID,postType,article) {
 
 // Wraparound
   this.borders = function() {
-    if (this.position.x < -this.s)  this.position.x = width +this.s;
-    if (this.position.y < -this.s)  this.position.y = height+this.s;
-    if (this.position.x > width +this.s) this.position.x = -this.s;
-    if (this.position.y > height+this.s) this.position.y = -this.s;
+    if (this.position.x - xoffset < -this.s)  this.position.x = width +this.s;
+    if (this.position.y - yoffset < -this.s)  this.position.y = height+this.s;
+    if (this.position.x - xoffset > width +this.s) this.position.x = -this.s;
+    if (this.position.y - yoffset > height+this.s) this.position.y = -this.s;
   }
 
 // Separation

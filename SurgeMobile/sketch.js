@@ -41,8 +41,18 @@ var mouse={x:0,y:0};
 var xoffset = 0;
 var yoffset = 0;
 
+var originalPostCoords = [];
+var postIsFocused = false;
+var focusedPostID;
+var postInputVisible = false;
+
+var previewPostTime = 0;
+var previewing = false;
+var postID;
+
+
 function preload(){
-	articles = loadJSON('data.json');
+  articles = loadJSON('data.json');
 }
 
 
@@ -85,130 +95,169 @@ function draw() {
   fill(0);
   panx = startCoords[0];
   pany = startCoords[1];
-  ellipse(x-panx,y-pany,500,500);
-
+  xoffset = x - panx;
+  yoffset = y - pany;
 }
 
 window.onload = function(){
-  var postbtn = document.getElementById('action-container');
+  var createPostBtn = document.getElementById('action-container');
+  var viewPostContents = document.getElementById('preview-post')
   var searchbtn = document.getElementById('search-button');
   var rightbtn = document.getElementById('right-button');
   var leftbtn = document.getElementById('left-button');
+  var createCommentBtn = document.getElementById('create-comment-button');
   var leftIcon, rightIcon;
-  postbtn.onclick = function(){
+  var postComment = document.getElementById('post-comment-button');
+
+
+  createPostBtn.onclick = function(){
     console.log('post UI');
     //clear all elements
     $('#left-button').empty();
     $('#right-button').empty();
     
     //change the title
-    $('#title').text('POST');
+    generatetitle('POST');
 
-    //replace profile icon with back button
-    leftIcon = $('<img>', {
-      class : "icon-left", 
-      src : "images/back.png", 
-      alt : "back", 
-      title : "back icon"
-    });
+    //replace left icon with back button
+    backbutton();
 
-    leftIcon.appendTo('#left-button');
+    //replace right icon with search button
+    searchbutton();
 
-    //replace search icon
-    rightIcon = $('<img>', {
-      class: "icon-right",
-      src : "images/search-icon.png",
-      alt : "search",
-      title : "search icon"
-    });
+    //show post ui
+    postinputUI('visible');
 
-    rightIcon.appendTo($('#right-button'));
-
-    $('img:first').addClass('icon-left');
-
-
-    backbtn = document.getElementById('back-button');
-
-    makePostUI();
-
+    //hide create post button
+    createPostButton('hidden');
   };
 
   //attach event listener to backbutton
   leftbtn.onclick = function(){
-    var page = $('.icon-left').attr('alt');
-    console.log(page);
-    if(page == "profile"){
+    var leftButtonAttribute = $('.icon-left').attr('alt');
+    var title = $('#title').text();
+    if(leftButtonAttribute == "profile"){
       //do nothing
-    } else if (page == "back"){
+    } else if (leftButtonAttribute == "back"){
       //generate home page
-      $('#post-container').animate({height : '0'});
-      $('#post-container').css('visibility', 'hidden');
-      $(".icon-left").attr("src","images/profile.png");
-      $('.icon-left').attr("alt", "profile");
-      $('.icon-left').attr("title", "profile icon");
-      $('#title').text('SURGE');
+
+      if( title == 'COMMENT' ){
+        createCommentButton('visible');
+        createCommentUI('hidden');
+        generatetitle('CONTENTS');
+      } else {
+        hideInterface();
+      }
     }
   }
 
+  createCommentBtn.onclick = function(){
+    //show the create comment interface
+    console.log('create comment');
+    createCommentUI('visible');
+    //hide the create comment button
+    createCommentButton('hidden');
+    generatetitle('COMMENT')
+  }
+
+  postComment.onclick = function(){
+    //show comment input container
+    createCommentUI('hidden');
+    postNewComment();
+    //show create comment button
+  }
+  
+
+
+
+  viewPostContents.onclick = function(){
+    if(millis() > previewPostTime + 1000){
+      //hide preview window
+      previewPost('hidden');
+      //change title
+      generatetitle('CONTENTS');
+      //show post contents window
+      postcontentsUI('visible', postID, 'userpost');
+      //show add comment button
+      createCommentButton('visible');
+    }
+  }
 
 }
 
-function makePostUI(){
-  $('#post-container').css('visibility', 'visible');
-  $('#post-container').animate({height:'80vh'});
-}
+
 
 
 function translate(){
-	//ctx.translate(xoff,yoff);
+  //ctx.translate(xoff,yoff);
 }
 
 function mousePressed(){
-	//add a post 
-  if(postButtonPressed == true){
-    universe.addPost(new Post(mouseX, mouseY,null, millis(), pt, hashTagList, id,'user',null));
-    postButtonPressed = false;
-    pt = '';
-  } 
-  check();
-
+  //add a post 
+  console.log('mouse clicked');
+  
+  if(postIsFocused == false){
+    check();//what has the mouse been pressed on?
+  }
   startCoords = [ //store beginning mouse coordinates
         mouseX - last[0],
         mouseY - last[1]
    ];
- 	x = mouseX;
- 	y = mouseY;
+  x = mouseX;
+  y = mouseY;
 }
 
 function mouseReleased(){
-	last = [ //store last mouse coordinates
-		mouseX - startCoords[0],
-		mouseY - startCoords[1]
-	]
+  last = [ //store last mouse coordinates
+    mouseX - startCoords[0],
+    mouseY - startCoords[1]
+  ]
 }
 
 function mouseDragged(){
-	if(mouseX >= 0){ //is the mouse being dragged inside the canvas?
-		x = mouseX;
-		y = mouseY;
-	}
+  if(mouseX >= 0){ //is the mouse being dragged inside the canvas?
+    x = mouseX;
+    y = mouseY;
+  }
 }
 
 function check() { //check to see if a post was clicked on
-  console.log(postButtonPressed);
+  
   for (var i = 0; i < universe.posts.length; i++) {
-    
-        
-    if (universe.posts[i].mouseIntersectsWithPost()) { //is the mouse intersecting with the post?
-      universe.posts[i].showMenu = true; //show the menu around the post
-      //revealPostContents(bubbles[i].ID); //populate the window with this post's contents
-      // console.log('show menu!!!');
       
+        
+    if (universe.posts[i].mouseIntersectsWithPost() == true) { //is the mouse intersecting with the post?
+      
+      //focus post to center of screen
+      console.log('post # ' + i + ' was clicked on');
+      
+      //preview the post when clicked on
+      previewPost('visible',i);
+
+      //increment # of views
+      universe.posts[i].views++;
+
+      //change title to preview
+      generatetitle('preview');
+
+      //hide post button
+      createPostButton('hidden');
+
+      //set timer so click doesnt automatically
+      //register the post contents view
+      previewPostTime = millis();
+
+      //capture the posts id number
+      postID = i;
+
+      //the post is focused, so don't let the
+      //mouse register on any other post objects.
+      postIsFocused = true;
+    
+
     } else if (universe.posts[i].mouseIntersectsWithPost() == false) { //mouse is not intersecting
-      universe.posts[i].showMenu = false; //hide the menu
-      //if the mouse was pressed outside the boundaries of any of the current posts, then hide the post contents
-      // console.log('pressed ' + px);
-    	
+      
+      
     }
     
     
@@ -217,7 +266,7 @@ function check() { //check to see if a post was clicked on
     } else {
       
     }
-    
+    //profilebutton();
     //evaluate all other bubbles to see if any of them are currently pressed. if none are pressed, then hide the postcontents window
     // if(universe.posts[i].showMenu == true){
     //   showPostContents = true; //one of the posts has been clicked on, dont hide contents
@@ -230,6 +279,22 @@ function check() { //check to see if a post was clicked on
   }
 }
 
+// function focusPost(id){
+//   //move the post to the center and expand it
+//   //store original coordinates
+//   originalPostCoords = [universe.posts[id].position.x - xoffset, universe.posts[id].position.y - yoffset];
+//   universe.posts[id].position.x = width/2 + xoffset;
+//   universe.posts[id].position.y = height/2 + yoffset
+//   console.log('post #' + id + ' is forcused');
+//   postIsFocused = true;
+// }
+
+// function unfocusPost(id){
+//   universe.posts[id].position.x = originalPostCoords[0];
+//   universe.posts[id].position.y = originalPostCoords[1];
+//   postIsFocused = false;
+// }
+
 function postText() {
   //grab the text and the hashtags entered into the inputs
   //place them in temporary variable to later be injected into
@@ -238,9 +303,24 @@ function postText() {
   pt = postTextInput;
   console.log(pt);
   document.getElementById('input-area').innerHTML = 'what are you thinking about?';
-  $('#post-container').animate({height : '0'});
-  $('#post-container').css('visibility', 'hidden');
-  postButtonPressed = true; //allow user to post a comment somewhere
+  postinputUI('hidden');
+  createPostButton('visible');
+  $('#input-area').css('color', 'lightgrey');
+  profilebutton();
+  generatetitle('SURGE');
+  universe.addPost(new Post(width/2, height/2,null, millis(), pt, hashTagList, universe.posts.length,'userpost',null));
+  pt = ''; 
+  id++;
+}
+
+function postNewComment(){
+  postCommentInput = document.getElementById('input-comment-area').innerHTML;
+  var commentText = postCommentInput;
+  console.log(commentText);
+  updateComments(commentText, postID);
+  $('input-comment-area').css('color', 'lightgrey');
+  createCommentButton('visible');
+  generatetitle('CONTENTS');
 }
 
 function addHashTag() {
@@ -263,77 +343,56 @@ function addHashTag() {
 }
 
 function queryNYT(){
-	var query = document.getElementById("search").value;
-	console.log(query);
-	var path = "http://api.nytimes.com/svc/search/v2/articlesearch.json?q=";
-	var key = "&api-key=6a28ebb558fde10851695af03590a246%3A2%3A74827428";
-	var url = path + query + key;
-	nyt = loadJSON(url, getData);
-	document.getElementById('search').value = '';
+  var query = document.getElementById("search").value;
+  console.log(query);
+  var path = "http://api.nytimes.com/svc/search/v2/articlesearch.json?q=";
+  var key = "&api-key=6a28ebb558fde10851695af03590a246%3A2%3A74827428";
+  var url = path + query + key;
+  nyt = loadJSON(url, getData);
+  document.getElementById('search').value = '';
 }
 
 function getData(data){
-	console.log(data);
-	populateWithNYT(data);
+  console.log(data);
+  populateWithNYT(data);
 }
 
 
 function revealPostContents(id){
   //show post content as well as comments and related tags
-  // console.log(universe.posts[id].a.article);
+  //console.log(universe.posts[id].a.article);
 
   //focus the bubble to center of screen and increase the size for readability
-  
-
-
-  $('#article-title').empty();
-  $('#article-contents').empty();
-  if (universe.posts[id].postType == 'article'){ //if the clicked on bubble is an article and not a user post
-  	//show article url
-  	var articleNode = document.getElementById('article-title');
-  	var link = document.createElement('a');
-  	var linkText = document.createTextNode(universe.posts[id].a.web_url);
-	link.appendChild(linkText);
-	link.title = universe.posts[id].a.headline.main;
-	link.href = universe.posts[id].a.web_url;
-	link.target = '_blank';
-	articleNode.appendChild(link);
-	//show article contents
-	//split article into paraphs
-	var txt = universe.posts[id].a.lead_paragraph;
-	//var txtarr = splitTokens(txt,'#');
-	// for (var i = 0; i < txtarr.length; i++){
-		var n = document.getElementById('article-contents');
-		var p = document.createElement('p');
-		var t = document.createTextNode(txt);
-		p.appendChild(t);
-		n.appendChild(p);
-		//document.createElement('br');
-	//}
-  } else {
-    //the clicked on bubble was a user post. 
-
-  	document.getElementById('post-text').innerHTML = universe.posts[id].postText;
-  }
-
+ 
+  //generate back button
+  backbutton();
   currentPostID = id;
-  document.getElementById("post-container").style.display = "none";
-  document.getElementById("post-contents").style.display = "initial";
-  
-  document.getElementById('op').innerHTML = id;
-  console.log('revealPostContents from post# ' + id);
-  
-  $('#comment-section').empty();//clear all previous content
-  
-  for (var i = 0; i<universe.posts[id].userComments.length; i++){
-    //populate with with the current post
-    var myNode = document.getElementById('comment-section');
+}
+
+function revealArticleContents(id){
+
+}
+
+function revealArticleContents(id){
+   //show article url
+    var articleNode = document.getElementById('article-title');
+    var link = document.createElement('a');
+    var linkText = document.createTextNode(universe.posts[id].a.web_url);
+  link.appendChild(linkText);
+  link.title = universe.posts[id].a.headline.main;
+  link.href = universe.posts[id].a.web_url;
+  link.target = '_blank';
+  articleNode.appendChild(link);
+  //show article contents
+  //split article into paraphs
+  var txt = universe.posts[id].a.lead_paragraph;
+  //var txtarr = splitTokens(txt,'#');
+  // for (var i = 0; i < txtarr.length; i++){
+    var n = document.getElementById('article-contents');
     var p = document.createElement('p');
-    var comment = document.createTextNode(universe.posts[id].userComments[i] + " says: " + universe.posts[id].comments[i]);
-    p.appendChild(comment);
-    p.setAttribute('id', 'comment');
-    myNode.appendChild(p);
-  }
+    var t = document.createTextNode(txt);
+    p.appendChild(t);
+    n.appendChild(p);
 }
 
 
@@ -371,11 +430,10 @@ function populateWithNYT(data) {
   //console.log(articles.articles[1].article);
   //populate with some initial articles
   for (var i = 0; i < data.response.docs.length; i++){
-  	//console.log(articles.articles[i].article);
-  	universe.addPost(new Post(windowWidth/2, windowHeight/2, null, millis(), data.response.docs[i].headline.main, hashTagList, id,'article',data.response.docs[i]));
+    //console.log(articles.articles[i].article);
+    universe.addPost(new Post(windowWidth/2, windowHeight/2, null, millis(), data.response.docs[i].headline.main, hashTagList, id,'article',data.response.docs[i]));
   }
 }
-
 
 
 

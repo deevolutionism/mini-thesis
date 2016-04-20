@@ -127,19 +127,6 @@ input:focus {
   border: solid 20px #969696;
 }
 
-#post-contents{
-  position: absolute;
-  left:0;
-  top:0;
-  background-color: #fff;
-  box-sizing:border-box;
-  width: 33vw;
-  height: 100vh;
-  padding: 2vw;
-  overflow-y:auto;
-  display: none;
-}
-
 .make-comment{
   display: none;
 }
