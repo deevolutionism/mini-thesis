@@ -4,11 +4,10 @@
  * @description Demonstration of Craig Reynolds' "Flocking" behavior.
  * See: http://www.red3d.com/cwr/
  * Rules: Cohesion, Separation, Alignment
- * (from <a href="http://natureofcode.com">natureofcode.com</a>).
- *  Drag mouse to add boids into the system.
+ * (from <a href="http://natureofcode.com">natureofcode.com</a>)
  */
 
-
+var socket = io();
 var universe;
 
 var articles;
@@ -49,7 +48,10 @@ var postInputVisible = false;
 var previewPostTime = 0;
 var previewing = false;
 var postID;
+var username;
 
+var firstTimeLoading = false;
+var loggedin = false;
 
 function preload(){
   articles = loadJSON('data.json');
@@ -100,6 +102,8 @@ function draw() {
 }
 
 window.onload = function(){
+
+  var login = document.getElementById('loginSubmit');
   var createPostBtn = document.getElementById('action-container');
   var viewPostContents = document.getElementById('preview-post')
   var searchbtn = document.getElementById('search-button');
@@ -109,6 +113,12 @@ window.onload = function(){
   var leftIcon, rightIcon;
   var postComment = document.getElementById('post-comment-button');
 
+  login.onclick = function(){
+    username = $('#login-username').val();
+    console.log('user entered username: ' + username);
+    createNewUser(username);
+
+  }
 
   createPostBtn.onclick = function(){
     console.log('post UI');
@@ -131,6 +141,8 @@ window.onload = function(){
     //hide create post button
     createPostButton('hidden');
   };
+
+  
 
   //attach event listener to backbutton
   leftbtn.onclick = function(){
@@ -157,16 +169,15 @@ window.onload = function(){
     createCommentUI('visible');
     //hide the create comment button
     createCommentButton('hidden');
-    generatetitle('COMMENT')
+    generatetitle('COMMENT');
   }
 
   postComment.onclick = function(){
     //show comment input container
     createCommentUI('hidden');
-    postNewComment();
+    postNewComment(username);
     //show create comment button
   }
-  
 
 
 
@@ -177,7 +188,7 @@ window.onload = function(){
       //change title
       generatetitle('CONTENTS');
       //show post contents window
-      postcontentsUI('visible', postID, 'userpost');
+      postcontentsUI('visible', postID, 'userpost', username);
       //show add comment button
       createCommentButton('visible');
     }
@@ -186,6 +197,60 @@ window.onload = function(){
 }
 
 
+var $usernameInput = $('#username-input');
+  var $currentInput = $usernameInput.focus();
+  var $window = $(window);
+  $window.keydown(function (event) {
+    // Auto-focus the current input when a key is typed
+    if (!(event.ctrlKey || event.metaKey || event.altKey)) {
+      $currentInput.focus();
+    }
+    // When the client hits ENTER on their keyboard
+    if (event.which === 13) {
+      if (!username) {
+        username = $('#login-username').val();
+        createNewUser(username);
+      }
+    }
+  });
+
+
+function createNewUser(name){
+  //add new username to json array via socket
+  console.log('sending username: ' +  name);
+  socket.emit('addnewuser', name);
+}
+
+socket.on('goToUniverse', function(msg){
+  //navigate to the universe page
+  console.log('logged in as: ' + msg);
+  //fade login page out
+  $('#login-container').fadeOut();
+  //release clicking restraint
+  loggedin = true;
+  //make ui elements visible
+  showUniverseUI();
+  //request previous posts from server
+  //send username so the server only populates this client.
+  socket.emit('populate', username);
+  
+});
+
+socket.on('populateWithData', function(data){
+
+  if(data.data.userposts.length != undefined && firstTimeLoading == false && data.username == username){
+    for(var i = 0; i < data.data.userposts.length; i++){
+      universe.addPost(new Post(width/2, height/2,null, millis(), data.data.userposts[i].text, hashTagList, universe.posts.length,'userpost',null,data.data.userposts.OP));
+    }
+    //prevent the client from adding new posts everytime another
+    //client connects and sends out a population request.
+    firstTimeLoading = true; 
+  }
+});
+
+socket.on('updatePostViews', function(data){
+
+});
 
 
 function translate(){
@@ -196,7 +261,7 @@ function mousePressed(){
   //add a post 
   console.log('mouse clicked');
   
-  if(postIsFocused == false){
+  if(postIsFocused == false && loggedin == true){
     check();//what has the mouse been pressed on?
   }
   startCoords = [ //store beginning mouse coordinates
@@ -228,14 +293,13 @@ function check() { //check to see if a post was clicked on
         
     if (universe.posts[i].mouseIntersectsWithPost() == true) { //is the mouse intersecting with the post?
       
-      //focus post to center of screen
       console.log('post # ' + i + ' was clicked on');
       
       //preview the post when clicked on
-      previewPost('visible',i);
+      previewPost('visible',i,username);
 
       //increment # of views
-      universe.posts[i].views++;
+      //universe.posts[i].views++;
 
       //change title to preview
       generatetitle('preview');
@@ -249,6 +313,9 @@ function check() { //check to see if a post was clicked on
 
       //capture the posts id number
       postID = i;
+
+      //capture the username of the post
+      postUserName = universe.posts[i].username;
 
       //the post is focused, so don't let the
       //mouse register on any other post objects.
@@ -308,16 +375,24 @@ function postText() {
   $('#input-area').css('color', 'lightgrey');
   profilebutton();
   generatetitle('SURGE');
-  universe.addPost(new Post(width/2, height/2,null, millis(), pt, hashTagList, universe.posts.length,'userpost',null));
+  //send to server
+  console.log(username + ' made a new post');
+  var postData = {'OP':username, 'text':pt,'views':0,'comments':[]};
+  socket.emit('newUserPost', postData);
+  // universe.addPost(new Post(width/2, height/2,null, millis(), pt, hashTagList, universe.posts.length,'userpost',null));
   pt = ''; 
   id++;
 }
 
-function postNewComment(){
+socket.on('addUserPostToUniverse', function(data){
+  //add post to universe
+  universe.addPost(new Post(width/2, height/2,null, millis(), data.text, hashTagList, universe.posts.length,'userpost',null,data.OP));
+});
+
+function postNewComment(user){
   postCommentInput = document.getElementById('input-comment-area').innerHTML;
   var commentText = postCommentInput;
-  console.log(commentText);
-  updateComments(commentText, postID);
+  updateComments(commentText, postID, user);
   $('input-comment-area').css('color', 'lightgrey');
   createCommentButton('visible');
   generatetitle('CONTENTS');
@@ -409,7 +484,7 @@ function addComment(){
   universe.posts[currentPostID].userComments.push('Gentry Demchak');
   var myNode = document.getElementById('comment-section');
   var p = document.createElement('p');
-  var comment = document.createTextNode('Gentry Demchak says: '+newComment);
+  var comment = document.createTextNode('Gentry Demchak says: '+ newComment);
   p.appendChild(comment);
   p.setAttribute('id', 'comment');
   myNode.appendChild(p);
@@ -434,6 +509,8 @@ function populateWithNYT(data) {
     universe.addPost(new Post(windowWidth/2, windowHeight/2, null, millis(), data.response.docs[i].headline.main, hashTagList, id,'article',data.response.docs[i]));
   }
 }
+
+
 
 
 

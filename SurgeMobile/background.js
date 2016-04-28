@@ -10,7 +10,7 @@ var startTime;
 var currentTime;
 var lastDrawTime = 0;
 function setup(){
-	createCanvas(width, height);
+	createCanvas(windowWidth, windowHeight);
 	startTime = millis();
 }
 

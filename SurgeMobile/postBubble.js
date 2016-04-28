@@ -5,7 +5,7 @@
 // Post class
 // Methods for Separation, Cohesion, Alignment added
 
-function Post(x,y,size,time,t,hash,ID,postType,article) {
+function Post(x,y,size,time,t,hash,ID,postType,article,user) {
   //class constructor
   this.acceleration = createVector(0,0);
   this.velocity = createVector(random(-0.2,0.2),random(-0.2,0.2));
@@ -20,6 +20,7 @@ function Post(x,y,size,time,t,hash,ID,postType,article) {
   // this.ypos = y;
   this.postType = postType; //is this a user post or an article?
   this.ID = ID;
+  this.username = user;
   this.hashTags = hash;
   this.lifetime = 500;
   this.postText = t;
@@ -111,13 +112,13 @@ function Post(x,y,size,time,t,hash,ID,postType,article) {
     // Reset accelertion to 0 each cycle
     this.acceleration.mult(0);
     
-    
-    if (millis() >= this.nextSecond) {
-      this.lifetime--
-      this.s = this.lifetime;
-      this.desiredSeparation = this.lifetime * 2;
-      this.nextSecond = millis() + 1000;
-    }
+    /* T I M E   C O U N T E R */
+    // if (millis() >= this.nextSecond) {
+    //   this.lifetime--
+    //   this.s = this.lifetime;
+    //   this.desiredSeparation = this.lifetime * 2;
+    //   this.nextSecond = millis() + 1000;
+    // }
     
     if (this.showMenu == true) {
       this.s = 100;
@@ -297,12 +298,12 @@ function Post(x,y,size,time,t,hash,ID,postType,article) {
     //ellipse(this.position.x, this.position.y, this.s, this.s);
   }
 
-// Wraparound
+//Wraparound
   this.borders = function() {
-    if (this.position.x - xoffset < -this.s)  this.position.x = width +this.s;
-    if (this.position.y - yoffset < -this.s)  this.position.y = height+this.s;
-    if (this.position.x - xoffset > width +this.s) this.position.x = -this.s;
-    if (this.position.y - yoffset > height+this.s) this.position.y = -this.s;
+    // if (this.position.x - xoffset < -this.s)  this.position.x = width +this.s;
+    // if (this.position.y - yoffset < -this.s)  this.position.y = height+this.s;
+    // if (this.position.x - xoffset > width +this.s) this.position.x = -this.s;
+    // if (this.position.y - yoffset > height+this.s) this.position.y = -this.s;
   }
 
 // Separation

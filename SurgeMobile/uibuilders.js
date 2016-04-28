@@ -1,4 +1,4 @@
-function backbutton(){
+function backbutton(display){
 	$('#left-button').empty();
   	var backIcon = $('<img>', {
       class : "icon-left", 
@@ -8,6 +8,12 @@ function backbutton(){
     });
 
   backIcon.appendTo('#left-button');
+}
+
+function showUniverseUI(){
+	$('#left-button').css('visibility', 'visible');
+	$('#right-button').css('visibility', 'visible');
+	$('#action-container').css('visibility', 'visible');
 }
 
 function createCommentButton(display){
@@ -28,7 +34,7 @@ function createCommentUI(display){
 	} else if(display == 'visible'){
 		console.log('comment button set to visible!');
 		$('#create-comment-container').css('visibility', 'visible');
-		$('#create-comment-container').animate({height:'80vh'});
+		$('#create-comment-container').animate({height:'70vh'});
 	}
 }
 
@@ -41,13 +47,26 @@ function createPostButton(display){
 	}
 }
 
-function updateComments(comment, id){
+function updateComments(comment, id, username){
 	//add the comment to the post object
-	universe.posts[id].comments.push(comment);
+	// universe.posts[id].comments.push(comment);
+	console.log(username + 'replied to post# ' + id + 'with: ' + comment);
+	socket.emit('pushNewComment', {'id':id,'comment':comment,'username':username});
 	//clear the comments container
 	$('#post-comments').html('');
-	//regenerate the comments li with new comment
-	for(var i = 0; i < universe.posts[id].comments.length; i++){
+}
+
+socket.on('updateComments', function(data){
+	//clear comments
+	$('#post-comments').html('');
+	//regenerate the comments li with new comment prepended
+	console.log(data);
+	var commentBlock = $('<li>',{class:'comment-block'});
+	var profile = $('<img>',{class: 'icon-left',src:'images/anonymous-small.png',alt:'profile',title:'profile icon'});
+	commentBlock.append(profile);
+	commentBlock.append(comment);
+	$('#post-comments').prepend(commentBlock);
+	for(var i = 0; i < data.jsonobj.userposts[data.id].comments.length; i++){
 		var commentBlock = $('<li>', {
 				class: 'comment-block'
 			});
@@ -57,14 +76,13 @@ function updateComments(comment, id){
   			alt : "profile", 
   			title : "profile icon"
 		});
-		var comment = $('<span />').html(universe.posts[id].comments[i]);
-		console.log('comment: ' + universe.posts[id].comments[i]);
+		var comment = $('<span />').html(data.jsonobj.userposts[data.id].comments[i].comment);
+		console.log('comment: ' + comment);
 		commentBlock.append(profile);
 		commentBlock.append(comment);
 		$('#post-comments').prepend(commentBlock);
 	}
-
-}
+});
 
 function searchbutton(){
 	$('#right-button').empty();
@@ -94,7 +112,7 @@ function generatetitle(title){
 	$('#title').text(title);
 }
 
-function previewPost(display,id){
+function previewPost(display,id,username){
 	if(display == 'hidden'){
 		$('#preview-post').css('visibility', 'hidden');
 		previewing = false;
@@ -102,14 +120,20 @@ function previewPost(display,id){
 		
 	} else if(display == 'visible'){
 		previewing = true;
+		socket.emit('requestPreviewPost', {id:id,user:username});
 		console.log('reveal!');
 		$('#preview-post').css('visibility', 'visible');
-		$('#preview-post-text').html(universe.posts[id].postText);
-		$('#preview-post-author').html(universe.posts[id].author + ' # ' + universe.posts[id].ID );
-		$('#preview-views-number').html(universe.posts[id].views);
-		$('#preview-comments-number').html(universe.posts[id].comments.length);
 	}
 }
+
+socket.on('previewPost', function(data){
+	if(data.user == username){
+		$('#preview-post-text').html(data.text);
+		$('#preview-post-author').html(data.OP);
+		$('#preview-views-number').html(data.views);
+		$('#preview-comments-number').html(data.comments);
+	}
+});
 
 function postinputUI(display){
 	if(display == 'hidden'){
@@ -123,7 +147,7 @@ function postinputUI(display){
 	}
 }
 
-function postcontentsUI(display, id, type){
+function postcontentsUI(display, id, type, username){
 	if(display == 'hidden'){
 		$('#add-comment-button').css('visibility', 'hidden');
 		$('#post-contents').css('visibility', 'hidden');
@@ -134,28 +158,38 @@ function postcontentsUI(display, id, type){
 		$('#post-comments').html('');
 	} else if (display == 'visible'){
 		$('#add-comment-button').css('visibility', 'visible');
-		$("#post-author").html("post #: " + id);
-		$("#post-text").html(universe.posts[id].postText);
-		for(var i = 0; i < universe.posts[id].comments.length; i++){
+		//request post data
+		socket.emit('requestPostContents', {id:id, user:username});
+	}
+}
+
+socket.on('postContents', function(data){
+	console.log('data: ' + data.user + ' username: ' + username);
+	if(data.user == username){
+		console.log('generate post contents');
+		$('#post-author').html(data.OP);
+		$('#post-text').html(data.text);
+		//comments
+		for(var i = 0; i < data.comments.length; i++){
 			var commentBlock = $('<li>', {
-    				class: 'comment-block'
-    			});
+					class: 'comment-block'
+				});
 			var profile = $('<img>',{
 				class : "icon-left", 
-     			src : "images/anonymous-small.png", 
-      			alt : "profile", 
-      			title : "profile icon"
+	 			src : "images/anonymous-small.png", 
+	  			alt : "profile", 
+	  			title : "profile icon"
 			});
-			var comment = $('<span />').html(universe.posts[id].comments[i]);
+			var comment = $('<span />').html(data.comments[i].comment);
+			console.log('comment: ' + comment);
 			commentBlock.append(profile);
 			commentBlock.append(comment);
 			$('#post-comments').prepend(commentBlock);
 		}
 		$('#post-contents').css('visibility', 'visible');
-  		$('#post-contents').animate({height:'85vh'});
-
-	}
-}
+	  	$('#post-contents').animate({height:'85vh'});
+  	}
+});
 
 function hideInterface(){
 	createPostButton('visible');
@@ -171,15 +205,15 @@ function hideInterface(){
 
 // OTHER STUFF //
 
-$(window).resize(function(){
+// $(window).resize(function(){
 
-	$('#preview-post').css({
-		position:'absolute',
-		left: ($(window).width() - $('#preview-post').outerWidth())/2,
-		top: ($(window).height() - $('#preview-post').outerHeight())/2
-	});
+// 	$('#preview-post').css({
+// 		position:'absolute',
+// 		left: ($(window).width() - $('#preview-post').outerWidth())/2,
+// 		top: ($(window).height() - $('#preview-post').outerHeight())/2
+// 	});
 
-});
+// });
 
 // To initially run the function:
 $(window).resize();
