@@ -191,9 +191,10 @@ function addHashTag() {
 function queryNYT(){
 	var query = document.getElementById("search").value;
 	console.log(query);
-	var path = "http://api.nytimes.com/svc/search/v2/articlesearch.json?q=";
-	var key = "&api-key=6a28ebb558fde10851695af03590a246%3A2%3A74827428";
-	var url = path + query + key;
+	// var path = "http://api.nytimes.com/svc/search/v2/articlesearch.json?q=";
+	// var key = "&api-key=6a28ebb558fde10851695af03590a246%3A2%3A74827428";
+	// var url = path + query + key;
+  var url = 'http://api.nytimes.com/svc/topstories/v3/politics.jsonp?api-key=08262fe5e8fd972202d2419b531ce58a:17:74827428'
 	nyt = loadJSON(url, getData);
 	document.getElementById('search').value = '';
 }
