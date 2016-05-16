@@ -21,6 +21,7 @@
 
     <!-- FILES -->
     <script src="sketch.js" type="text/javascript"></script>
+    <script src="socketClient.js" type="text/javascript"></script>
     <script src="postBubble.js" type = "text/javascript"></script>
     <script src="PostObject.js" type = "text/javascript"></script>
     <script src='uibuilders.js' type = 'text/javascript'></script>
@@ -30,16 +31,8 @@
   </head>
   <style type="text/css">
     body {padding: 0; margin: 0;} canvas {vertical-align: top;}
-    
   </style>
-  <body style="overflow-y: hidden">
-    <!-- <div id="centeredmenu">
-      <ul>
-        <li><a href="#"><img src="images/profile.png"></a></li>
-        <li><div class = 'title'><h1>SURGE</h1></div></li>
-        <li><a href="#"><img src="images/search-icon.png"></a></li>
-      </ul>
-    </div> -->
+  <body style="">
     
     <div id = 'container'>
       <h1 id="title">SURGE</h1>
@@ -48,7 +41,19 @@
     </div>
 
     <div id = "login-container">
-      <h1>Make your username</h1>
+      <h1>Social Network</h1>
+      <h2>Share your opinions and views with others on a global scale.</h2>
+      <h1>Media Aggregator</h1>
+      <h2>Exposing you to widely disparate political and social topics for heated, lively debate. </h2>
+      <h1>Independent</h1>
+      <h2>Pure and untainted by corporate interests, advertisement, or money. This platform will be made possible by community contributions and development. No ads. No sponsored content. No bullshit.</h2>
+      <h1>Ephemeral</h1>
+      <h2>Nothing lasts forever, nor should it. We live moment to moment. Everything on here is eventually deleted to ensure a social experience closer to real life.</h2>
+      <h1>Anonymous</h1>
+      <h2>Post whatever you want, literally. Do it. Don’t be afraid.  Don’t sweat it. Be authentic.</h2>
+      <h1>Non Linear</h1>
+      <h2>Content is purposely distributed in a random fashion to maximize spontaneous discovery of new ideas.</h2>
+      <h1>Make Your Username:</h1>
       <div style="position:relative">
         <input type = "text" placeholder = "username" class = "ht" id="login-username"></input>
         <br>
@@ -75,10 +80,12 @@
 
     <div id='post-contents'>
       <img id ='user-profile' src="images/anonymous.png">
-      <p id="post-author"></p>
-      <p id = 'post-text'></p>
+      <span id="post-author"></span>
+      <div id = "post-contents-text-container">
+        <p id = 'post-text'></p>
+      </div>
       <hr>
-      <p>comments</p>
+      <p id = 'post-contents-number-comments'>comments</p>
       <div>
         <ul id='post-comments'>
         </ul>
@@ -87,9 +94,10 @@
 
     <div id="preview-post">
       <img src="images/profile.png">
-      <h3></h3>
       <span id='preview-post-author'></span>
-      <p id="preview-post-text">hello there</p>
+      <div id ="preview-post-text-container">
+        <p id="preview-post-text"></p>
+      </div>
       <ul id = 'preview-tags'></ul>
       <div id = 'preview-views-container'>
         <img src="images/view-icon.png">
@@ -102,7 +110,7 @@
     </div>
 
     <div id="create-comment-container">
-      <img src="images/profile.png" id = "pro-pic" alt="anonymous">
+      <img src="images/anonymous.png" id = "pro-pic" alt="anonymous">
       <div contenteditable="true" id="input-comment-area" class='input-zone' onfocus = 'replacecommentinputtext()'>Whats on your mind?</div>
       <button class = "button" id="post-comment-button" onclick="postNewComment()">post comment</button>
     </div>
@@ -112,7 +120,7 @@
     </div>
 
     <div id = "create-comment-button" class = 'post-button'>
-      <a href = '#'><img src="images/add.png"></a>
+      <a href = '#'><img src="images/add-comment.png"></a>
     </div>
   </body>
 </html>

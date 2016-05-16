@@ -5,14 +5,14 @@
 // Post class
 // Methods for Separation, Cohesion, Alignment added
 
-function Post(x,y,size,time,t,hash,ID,postType,article,user) {
+function Post(x,y,size,time,t,hash,ID,postType,user) {
   //class constructor
   this.acceleration = createVector(0,0);
   this.velocity = createVector(random(-0.2,0.2),random(-0.2,0.2));
   this.position = createVector(x,y);
   this.r = 3.0;
-  this.maxspeed = 5;    // Maximum speed
-  this.maxforce = 0.05; // Maximum steering force
+  this.maxspeed = 0.95;    // Maximum speed
+  this.maxforce = 0.95; // Maximum steering force
   //this.s = size;
   
   console.log(postType);
@@ -41,9 +41,25 @@ function Post(x,y,size,time,t,hash,ID,postType,article,user) {
   this.focused = false;
   this.author = 'anonymous';
   this.views = 0;
-  //article data
-  this.a = article;
 
+
+
+  //click animation
+  this.animate = false;
+  this.RED = 200;
+  this.GREEN = 0;
+  this.BLUE = 200;
+  this.A = 255;
+  this.start;
+  this.end;
+  this.xp;
+  this.yp;
+  this.SZ = 500;
+
+  //article data
+  //this.a = article;
+
+  this.currentViewers = 0;
 
   
   //array = [index0: heart, index1: happy, index2: surprised, index3: sad, index4: disgusted, index5: angry]
@@ -181,6 +197,43 @@ function Post(x,y,size,time,t,hash,ID,postType,article,user) {
       }
     }
   }
+
+  this.wasInteractedWith = function(state){
+    console.log('broadcast animation recieved: ' + state);
+    var st = state;
+    var d = dist(this.position.x - xoffset, this.position.y - yoffset, mouseX, mouseY);
+    
+      if(state && this.animate == false){
+        console.log('animating');
+        //mouse intersects and clicked on the bubble
+        this.animate = true; // trigger animation
+        this.start = millis();
+        //console.log('started: ' + this.startTime);
+        this.end = this.start + 1000;
+        //console.log('end time: ' + this.endTime);
+      }
+  
+      if(millis() < this.end && this.animate == true){
+        //animate a spreading circle indicating
+        //the post has been clicked on
+        this.xp = this.position.x - xoffset;
+        this.yp = this.position.y - yoffset;
+        this.SZ += 40;
+        this.A -= 10;
+        noStroke();
+        fill(this.RED,this.GREEN,this.BLUE,this.A);
+        ellipse(this.xp,this.yp,this.SZ,this.SZ);
+      }
+    
+      if(millis() >= this.end){
+          //stop the animation
+          //console.log('stop animation');
+          this.animate = false;
+          this.A = 255;
+          this.SZ = 500;
+          st = false;
+      }
+  }
   
   //change color of post to indicate the mouse is hovering over and an action can be made on it.
   this.intersects = function() {
@@ -190,6 +243,38 @@ function Post(x,y,size,time,t,hash,ID,postType,article,user) {
     } else {
       this.col = 150;
     }
+
+    //click animation
+    if (d < this.lifetime/2 && mousepressed && this.animate == false){
+    //mouse intersects and clicked on the bubble
+    this.animate = true; // trigger animation
+    this.start = millis();
+    //console.log('started: ' + this.startTime);
+    this.end = this.start + 1000;
+    //console.log('end time: ' + this.endTime);
+    }
+  
+  if(millis() < this.end && this.animate == true){
+      //animate a spreading circle indicating the post has been clicked on
+      //console.log('Start animation: ' + (this.endTime - millis()));
+      
+      this.xp = this.position.x - xoffset;
+      this.yp = this.position.y - yoffset;
+      this.SZ += 40;
+      this.A -= 10;
+      noStroke();
+      fill(this.RED,this.GREEN,this.BLUE,this.A);
+      ellipse(this.xp,this.yp,this.SZ,this.SZ);
+    }
+    
+    if(millis() >= this.end){
+        //stop the animation
+        //console.log('stop animation');
+        this.animate = false;
+        this.A = 255;
+        this.SZ = 500;
+      }
+
   }
   
   //highlight the reaction to indicate it can be clicked on.
@@ -298,6 +383,13 @@ function Post(x,y,size,time,t,hash,ID,postType,article,user) {
     //ellipse(this.position.x, this.position.y, this.s, this.s);
   }
 
+  this.activity = function(){
+    //everytime an action happens on this post (comment, click, view)
+    //animate a ripple
+    
+
+  }
+
 //Wraparound
   this.borders = function() {
     // if (this.position.x - xoffset < -this.s)  this.position.x = width +this.s;
@@ -305,6 +397,8 @@ function Post(x,y,size,time,t,hash,ID,postType,article,user) {
     // if (this.position.x - xoffset > width +this.s) this.position.x = -this.s;
     // if (this.position.y - yoffset > height+this.s) this.position.y = -this.s;
   }
+
+
 
 // Separation
 // Method checks for nearby boids and steers away
@@ -317,7 +411,7 @@ function Post(x,y,size,time,t,hash,ID,postType,article,user) {
       var d = p5.Vector.dist(this.position,posts[i].position);
       // If the distance is greater than 0 and less than an arbitrary amount (0 when you are yourself)
       if ((d > 0) && (d < this.desiredSeparation)) {
-        this.maxspeed = 0.5; //give it speed to move it away
+        this.maxspeed = 2; //give it speed to move it away
         // Calculate vector pointing away from neighbor
         var diff = p5.Vector.sub(this.position,posts[i].position);
         diff.normalize();

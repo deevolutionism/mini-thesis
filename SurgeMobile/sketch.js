@@ -48,10 +48,17 @@ var postInputVisible = false;
 var previewPostTime = 0;
 var previewing = false;
 var postID;
+var articleID;
 var username;
 
 var firstTimeLoading = false;
 var loggedin = false;
+
+var commentUI = false;
+var canTouchUniverse = false;
+
+var mousepressed;
+var mousereleased;
 
 function preload(){
   articles = loadJSON('data.json');
@@ -97,11 +104,22 @@ function draw() {
   fill(0);
   panx = startCoords[0];
   pany = startCoords[1];
-  xoffset = x - panx;
-  yoffset = y - pany;
+  xoffset = -(x - panx);
+  yoffset = -(y - pany);
 }
 
 window.onload = function(){
+
+  //deactivate screen movement when the user
+  //is navigating the universe
+  if(canTouchUniverse == true){
+    //when this is active, it prevents screen movement
+    $('body').bind('touchmove', function (ev) { 
+    ev.preventDefault();
+    });
+    console.log('set body overflow-y to hidden');
+    $('body').css('overflow-y', 'hidden');
+  }
 
   var login = document.getElementById('loginSubmit');
   var createPostBtn = document.getElementById('action-container');
@@ -117,7 +135,8 @@ window.onload = function(){
     username = $('#login-username').val();
     console.log('user entered username: ' + username);
     createNewUser(username);
-
+    //prevent refresh when dragging down on chrome mobile
+    $('body').css('overflow-y', 'hidden');
   }
 
   createPostBtn.onclick = function(){
@@ -140,6 +159,9 @@ window.onload = function(){
 
     //hide create post button
     createPostButton('hidden');
+
+    //dont allow bubbles to be clicked on/moved around
+    canTouchUniverse = false;
   };
 
   
@@ -151,8 +173,9 @@ window.onload = function(){
     if(leftButtonAttribute == "profile"){
       //do nothing
     } else if (leftButtonAttribute == "back"){
-      //generate home page
-
+      //generate home page 
+      //disable screen movement while navigating universe
+      canTouchUniverse = true;
       if( title == 'COMMENT' ){
         createCommentButton('visible');
         createCommentUI('hidden');
@@ -188,7 +211,12 @@ window.onload = function(){
       //change title
       generatetitle('CONTENTS');
       //show post contents window
-      postcontentsUI('visible', postID, 'userpost', username);
+      console.log(universe.posts[postID].postType);
+      if(universe.posts[postID].postType == 'article'){
+        postcontentsUI('visible', postID, 'article', username);
+      } else {
+        postcontentsUI('visible', postID, 'userpost', username);
+      }
       //show add comment button
       createCommentButton('visible');
     }
@@ -197,7 +225,7 @@ window.onload = function(){
 }
 
 
-var $usernameInput = $('#username-input');
+  var $usernameInput = $('#username-input');
   var $currentInput = $usernameInput.focus();
   var $window = $(window);
   $window.keydown(function (event) {
@@ -219,38 +247,14 @@ function createNewUser(name){
   //add new username to json array via socket
   console.log('sending username: ' +  name);
   socket.emit('addnewuser', name);
+  canTouchUniverse = true;
+  if(name == 'querynyt'){
+    //query the NYT to populate the server
+    queryNYT();
+    //makeCorsRequest();
+  }
 }
 
-socket.on('goToUniverse', function(msg){
-  //navigate to the universe page
-  console.log('logged in as: ' + msg);
-  //fade login page out
-  $('#login-container').fadeOut();
-  //release clicking restraint
-  loggedin = true;
-  //make ui elements visible
-  showUniverseUI();
-  //request previous posts from server
-  //send username so the server only populates this client.
-  socket.emit('populate', username);
-  
-});
-
-socket.on('populateWithData', function(data){
-
-  if(data.data.userposts.length != undefined && firstTimeLoading == false && data.username == username){
-    for(var i = 0; i < data.data.userposts.length; i++){
-      universe.addPost(new Post(width/2, height/2,null, millis(), data.data.userposts[i].text, hashTagList, universe.posts.length,'userpost',null,data.data.userposts.OP));
-    }
-    //prevent the client from adding new posts everytime another
-    //client connects and sends out a population request.
-    firstTimeLoading = true; 
-  }
-});
-
-socket.on('updatePostViews', function(data){
-
-});
 
 
 function translate(){
@@ -258,10 +262,12 @@ function translate(){
 }
 
 function mousePressed(){
+  mousepressed = true;
+  mousereleased = false;
   //add a post 
   console.log('mouse clicked');
-  
-  if(postIsFocused == false && loggedin == true){
+  console.log(canTouchUniverse);
+  if(postIsFocused == false && loggedin == true && canTouchUniverse == true){
     check();//what has the mouse been pressed on?
   }
   startCoords = [ //store beginning mouse coordinates
@@ -273,6 +279,8 @@ function mousePressed(){
 }
 
 function mouseReleased(){
+  mousepressed = false;
+  mousereleased = true;
   last = [ //store last mouse coordinates
     mouseX - startCoords[0],
     mouseY - startCoords[1]
@@ -292,11 +300,11 @@ function check() { //check to see if a post was clicked on
       
         
     if (universe.posts[i].mouseIntersectsWithPost() == true) { //is the mouse intersecting with the post?
-      
+        
       console.log('post # ' + i + ' was clicked on');
-      
+
       //preview the post when clicked on
-      previewPost('visible',i,username);
+      previewPost('visible',i,username,universe.posts[i].postType);
 
       //increment # of views
       //universe.posts[i].views++;
@@ -311,7 +319,7 @@ function check() { //check to see if a post was clicked on
       //register the post contents view
       previewPostTime = millis();
 
-      //capture the posts id number
+      //capture the posts id number  
       postID = i;
 
       //capture the username of the post
@@ -320,6 +328,9 @@ function check() { //check to see if a post was clicked on
       //the post is focused, so don't let the
       //mouse register on any other post objects.
       postIsFocused = true;
+
+      //increase number of current viewers
+      universe.posts[i].currentViewers++;
     
 
     } else if (universe.posts[i].mouseIntersectsWithPost() == false) { //mouse is not intersecting
@@ -366,7 +377,7 @@ function postText() {
   //grab the text and the hashtags entered into the inputs
   //place them in temporary variable to later be injected into
   //a bubble post object
-  postTextInput = document.getElementById('input-area').innerHTML;
+  postTextInput = $('#input-area').text();
   pt = postTextInput;
   console.log(pt);
   document.getElementById('input-area').innerHTML = 'what are you thinking about?';
@@ -379,18 +390,17 @@ function postText() {
   console.log(username + ' made a new post');
   var postData = {'OP':username, 'text':pt,'views':0,'comments':[]};
   socket.emit('newUserPost', postData);
-  // universe.addPost(new Post(width/2, height/2,null, millis(), pt, hashTagList, universe.posts.length,'userpost',null));
+
   pt = ''; 
-  id++;
+  id++; //increment id 
+  //allow bubbles to be interacted with again
+  canTouchUniverse = true;
 }
 
-socket.on('addUserPostToUniverse', function(data){
-  //add post to universe
-  universe.addPost(new Post(width/2, height/2,null, millis(), data.text, hashTagList, universe.posts.length,'userpost',null,data.OP));
-});
+
 
 function postNewComment(user){
-  postCommentInput = document.getElementById('input-comment-area').innerHTML;
+  postCommentInput = $('#input-comment-area').text();
   var commentText = postCommentInput;
   updateComments(commentText, postID, user);
   $('input-comment-area').css('color', 'lightgrey');
@@ -415,21 +425,6 @@ function addHashTag() {
 
   document.getElementById('ht').value = '';
   numTags++;
-}
-
-function queryNYT(){
-  var query = document.getElementById("search").value;
-  console.log(query);
-  var path = "http://api.nytimes.com/svc/search/v2/articlesearch.json?q=";
-  var key = "&api-key=6a28ebb558fde10851695af03590a246%3A2%3A74827428";
-  var url = path + query + key;
-  nyt = loadJSON(url, getData);
-  document.getElementById('search').value = '';
-}
-
-function getData(data){
-  console.log(data);
-  populateWithNYT(data);
 }
 
 
@@ -501,18 +496,26 @@ function hidePostContents(){
 }
 
 
-function populateWithNYT(data) {
-  //console.log(articles.articles[1].article);
-  //populate with some initial articles
-  for (var i = 0; i < data.response.docs.length; i++){
-    //console.log(articles.articles[i].article);
-    universe.addPost(new Post(windowWidth/2, windowHeight/2, null, millis(), data.response.docs[i].headline.main, hashTagList, id,'article',data.response.docs[i]));
-  }
+
+/////////////////////// N Y T A P I /////////////////////////////
+
+
+function queryNYT(){
+    var url = 'http://api.nytimes.com/svc/search/v2/articlesearch.json?fq=news_desk%3A%28%22Politics%22%29+AND+source%3A%28%22The+New+York+Times%22%29&begin_date=20160420&end_date=20160430&sort=newest&api-key=6a28ebb558fde10851695af03590a246%3A2%3A74827428';
+    var nyt = loadJSON(url, getData);
+}
+
+function getData(data){
+    console.log(data);
+    sendAPIQuery(data);
+}
+
+function sendAPIQuery(data){
+  socket.emit('storeAPIData', data);
 }
 
 
-
-
+///////////////////////////////////////////////////////////////////
 
 
 

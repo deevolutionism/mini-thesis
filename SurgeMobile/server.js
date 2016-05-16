@@ -4,12 +4,10 @@ var request = require('request');
 var express = require("express");
 var app = express();//create instance of express
 var port = 8000;
-var url='localhost'
+var url='localhost';
 var server = app.listen(port);
 var io = require("socket.io").listen(server);//socket io listen on port
-var nyt_key = {
-	id : '6a28ebb558fde10851695af03590a246:2:74827428'
-}
+
 
 app.use(bodyParser.urlencoded({
     extended: false
@@ -46,18 +44,23 @@ var JSON_FILE_NAME = 'User_Accounts';
 io.sockets.on('connection', function (socket) {//open io connection
 		console.log('socket connection established');
 
+        
+
         //get username and push to database
         socket.on('addnewuser', function(name){
             console.log('recieved username: ' + name);
             data.usernames.push(name);
             io.emit('goToUniverse', name);
+            if(name == 'querynyt'){
+                queryNYT();
+            }
         });
 
         socket.on('newUserPost', function(d){
             //push new post to database
             data.userposts.push(d);
             //add to screen
-            io.emit('addUserPostToUniverse',d)
+            io.emit('addUserPostToUniverse',d);
         });
 
         socket.on('populate', function(user){
@@ -69,15 +72,30 @@ io.sockets.on('connection', function (socket) {//open io connection
             //increment post views
             data.userposts[d.id].views++;
             //retrieve OP, text, and number of comments
-            var tempdata = {'text':data.userposts[d.id].text,'OP':data.userposts[d.id].OP, 'views':data.userposts[d.id].views,'comments':data.userposts[d.id].comments.length, 'user':d.user};
-            //send back to client to populate
-            io.emit('previewPost', tempdata);
+            if(d.postType == 'article'){
+                console.log('serving ' + d.user + ' article preview');
+                var tempdata = {postType:'article', snippet:data.userposts[d.id].snippet,OP:data.userposts[d.id].OP, views:data.userposts[d.id].views, comments:data.userposts[d.id].comments, user:d.user};
+                //send back to client to populate
+                io.emit('previewPost', tempdata);
+            } else {
+                console.log('serving ' + d.user + ' userpost preview');
+                var tempdata = {id:d.id,postType:'userpost', text:data.userposts[d.id].text,'OP':data.userposts[d.id].OP, 'views':data.userposts[d.id].views,'comments':data.userposts[d.id].comments.length, 'user':d.user};
+                //send back to client to populate
+                io.emit('previewPost', tempdata);
+            }
         });
 
         socket.on('requestPostContents', function(d){
             console.log(d.user + ' requested post contents');
-            var tempdata = {id:d.id, user:d.user, text:data.userposts[d.id].text, OP:data.userposts[d.id].OP, comments:data.userposts[d.id].comments};
-            io.emit('postContents',tempdata);
+            if(d.type == 'article'){
+                console.log('sending article contents to ' + d.user);
+                var tempdata = {id:d.id, user:d.user, type: 'article', text:data.userposts[d.id].text, OP:data.userposts[d.id].OP, url:data.userposts[d.id].url, snippet:data.userposts[d.id].snippet, multimedia:data.userposts[d.id].multimedia, comments:data.userposts[d.id].comments};
+                io.emit('postContents',tempdata);
+            } else {
+                var tempdata = {id:d.id, user:d.user, text:data.userposts[d.id].text, OP:data.userposts[d.id].OP, comments:data.userposts[d.id].comments};
+                io.emit('postContents',tempdata);
+            }
+            
         });
 
         socket.on('pushNewComment', function(d){
@@ -85,18 +103,52 @@ io.sockets.on('connection', function (socket) {//open io connection
             var comments = data;
             io.emit('updateComments',{id:d.id,jsonobj:data});
         });
+
+        socket.on('storeAPIData', function(d){
+            for(var i = 0; i<d.response.docs.length; i++){
+                var title = d.response.docs[i].headline.main;
+                var snippet = d.response.docs[i].snippet;
+                var url = d.response.docs[i].web_url;
+                var byline = d.response.docs[i].byline.original;
+                var multimedia = d.response.docs[i].multimedia[2];
+
+                data.userposts.push({
+                    OP:byline,
+                    snippet:snippet,
+                    text:title,
+                    views:0,
+                    url:url,
+                    multimedia:multimedia,
+                    comments:[]
+                });
+
+                console.log('pushed nyt article: ' + JSON.stringify({
+                    OP:byline,
+                    snippet:snippet,
+                    text:title,
+                    views:0,
+                    url:url,
+                    multimedia:multimedia,
+                    comments:[]
+                }));
+            }
+            console.log('done pushing nyt: ' + data.userposts.length + ' articles pushed to database');
+        });
+
 });	
 
+// callEvery24Hours();
 
+//query the NYT API every 24 hours
+function callEvery24Hours() {
+    console.log('clearing database');
+    data.nyt = [];
+    setInterval(queryNYT, 1000 * 60 * 60 * 24);
+}
 
-
-
-
-
-
-
-
-
+function queryNYT(){
+    io.emit('query', 'nyt');
+}
 
 
 

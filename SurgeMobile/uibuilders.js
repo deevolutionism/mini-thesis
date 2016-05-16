@@ -29,9 +29,11 @@ function createCommentButton(display){
 
 function createCommentUI(display){
 	if(display == 'hidden'){
+		commentUI = false;
 		$('#create-comment-container').css('visibility', 'hidden');
 		$('#create-comment-container').css('height', '0');
 	} else if(display == 'visible'){
+		commentUI = true;
 		console.log('comment button set to visible!');
 		$('#create-comment-container').css('visibility', 'visible');
 		$('#create-comment-container').animate({height:'70vh'});
@@ -76,10 +78,13 @@ socket.on('updateComments', function(data){
   			alt : "profile", 
   			title : "profile icon"
 		});
+		var user = $('<span />').html(' - ' + data.jsonobj.userposts[data.id].comments[i].user);
 		var comment = $('<span />').html(data.jsonobj.userposts[data.id].comments[i].comment);
 		console.log('comment: ' + comment);
 		commentBlock.append(profile);
 		commentBlock.append(comment);
+		commentBlock.append(user);
+		$('#post-contents-number-comments').html('comments : ' + data.jsonobj.userposts[data.id].comments.length);
 		$('#post-comments').prepend(commentBlock);
 	}
 });
@@ -112,7 +117,7 @@ function generatetitle(title){
 	$('#title').text(title);
 }
 
-function previewPost(display,id,username){
+function previewPost(display,id,username,postType){
 	if(display == 'hidden'){
 		$('#preview-post').css('visibility', 'hidden');
 		previewing = false;
@@ -120,18 +125,34 @@ function previewPost(display,id,username){
 		
 	} else if(display == 'visible'){
 		previewing = true;
-		socket.emit('requestPreviewPost', {id:id,user:username});
+		if(postType == 'article'){
+			console.log(username + ' requested an article preview');
+			socket.emit('requestPreviewPost', {id:id,user:username,postType:postType})
+		} else {
+			console.log(username + ' requested a userpost preview');
+			socket.emit('requestPreviewPost', {id:id,user:username, postType:'userpost'});
+		}
 		console.log('reveal!');
 		$('#preview-post').css('visibility', 'visible');
 	}
 }
 
-socket.on('previewPost', function(data){
+socket.on('previewPost', function(data) {
+	//recieve animation request
+	universe.posts[data.id].wasInteractedWith(true);
 	if(data.user == username){
-		$('#preview-post-text').html(data.text);
 		$('#preview-post-author').html(data.OP);
+		if(data.postType == 'article') {
+			console.log(data.snippet);
+			$('#preview-post-text').html(data.snippet);
+		} else {
+			$('#preview-post-text').html(data.text);
+		}
 		$('#preview-views-number').html(data.views);
 		$('#preview-comments-number').html(data.comments);
+	} else {
+		//animate the post for everyone else
+
 	}
 });
 
@@ -159,35 +180,82 @@ function postcontentsUI(display, id, type, username){
 	} else if (display == 'visible'){
 		$('#add-comment-button').css('visibility', 'visible');
 		//request post data
-		socket.emit('requestPostContents', {id:id, user:username});
+		if(type == 'article'){
+			socket.emit('requestPostContents', {id:id, user:username, type: 'article'});
+		} else {
+			socket.emit('requestPostContents', {id:id, user:username});
+		}
 	}
 }
 
 socket.on('postContents', function(data){
 	console.log('data: ' + data.user + ' username: ' + username);
 	if(data.user == username){
-		console.log('generate post contents');
-		$('#post-author').html(data.OP);
-		$('#post-text').html(data.text);
-		//comments
-		for(var i = 0; i < data.comments.length; i++){
-			var commentBlock = $('<li>', {
-					class: 'comment-block'
+		if(data.type == 'article'){
+			//populate with text first, then snippet.
+			console.log('article contents');
+			$('#post-author').html(data.OP);
+			$('#post-text').html(data.snippet);
+			var url = decodeURI(data.url);
+			$('<a>',{
+    			text: data.text,
+    			title: data.text,
+    			target: '_blank',
+    			href: url
+			}).appendTo('#post-contents-text-container');
+			var snippet = $('<span />').html(data.snippet);
+			//comments
+			for(var i = 0; i < data.comments.length; i++){
+				var commentBlock = $('<li>', {
+						class: 'comment-block'
+					});
+				var profile = $('<img>',{
+					class : "icon-left", 
+		 			src : "images/anonymous-small.png", 
+		  			alt : "profile", 
+		  			title : "profile icon"
 				});
-			var profile = $('<img>',{
-				class : "icon-left", 
-	 			src : "images/anonymous-small.png", 
-	  			alt : "profile", 
-	  			title : "profile icon"
-			});
-			var comment = $('<span />').html(data.comments[i].comment);
-			console.log('comment: ' + comment);
-			commentBlock.append(profile);
-			commentBlock.append(comment);
-			$('#post-comments').prepend(commentBlock);
+				if(data.type)
+				var user = $('<span />').html(' - ' + data.comments[i].user);
+				var comment = $('<span />').html(data.comments[i].comment);
+				console.log('comment: ' + comment);
+				commentBlock.append(profile);
+				commentBlock.append(comment);
+				commentBlock.append(user);
+				$('#post-comments').prepend(commentBlock);
+			}
+			$('#post-contents-number-comments').html('comments : ' + data.comments.length);
+			$('#post-contents').css('visibility', 'visible');
+		  	$('#post-contents').animate({height:'85vh'});
+		} else {
+			console.log('generate post contents');
+			$('#post-author').html(data.OP);
+			$('#post-text').html(data.text);
+			//comments
+			for(var i = 0; i < data.comments.length; i++){
+				var commentBlock = $('<li>', {
+						class: 'comment-block'
+					});
+				var profile = $('<img>',{
+					class : "icon-left", 
+		 			src : "images/anonymous-small.png", 
+		  			alt : "profile", 
+		  			title : "profile icon"
+				});
+				if(data.type)
+				var user = $('<span />').html(' - ' + data.comments[i].user);
+				var comment = $('<span />').html(data.comments[i].comment);
+				console.log('comment: ' + comment);
+				commentBlock.append(profile);
+				commentBlock.append(comment);
+				commentBlock.append(user);
+				$('#post-comments').prepend(commentBlock);
+			}
+			$('#post-contents-number-comments').html('comments : ' + data.comments.length);
+			$('#post-contents').css('visibility', 'visible');
+		  	$('#post-contents').animate({height:'85vh'});
 		}
-		$('#post-contents').css('visibility', 'visible');
-	  	$('#post-contents').animate({height:'85vh'});
+		
   	}
 });
 
